@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#111827">
-  <meta name="description" content="정보처리기사 실기 30시간 합격 루틴 - 체크리스트, 핵심 개념, PDF 자료를 한곳에서 확인하세요.">
-  <title>정처기 실기 · 30시간 합격 루틴</title>
+  <meta name="description" content="9월 29일부터 10월 25일 시험까지. 날짜별 학습 목표, 매일 코딩 20분, 정리본 암기와 PDF 자료를 한곳에서.">
+  <title>정처기 실기 · 10월 25일 학습 플래너</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23111827'/%3E%3Cpath d='M18 33l9 9 20-22' fill='none' stroke='%23c8ff52' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <style>
     :root{--ink:#111827;--paper:#f6f7f2;--card:#fff;--lime:#c8ff52;--blue:#5267ff;--muted:#667085;--line:#e5e7eb;--soft:#eef0ff;--danger:#ef5b5b;--radius:22px;--shadow:0 14px 36px rgba(17,24,39,.08)}
@@ -45,55 +45,40 @@
     @media (min-width:640px){.shell{padding-left:24px;padding-right:24px}.hero{padding:34px}.pdf-grid{grid-template-columns:1fr 1fr}.roadmap{grid-template-columns:1fr 1fr}}
     @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
   </style>
+  <link rel="stylesheet" href="study.css">
 </head>
 <body>
-  <main class="shell">
+  <main class="shell" id="studyDashboard">
     <header class="topbar">
       <div class="brand">정처기 실기<em>.</em></div>
-      <div class="score"><b>73</b> 합격 루틴</div>
+      <div class="score"><b class="countdown" id="examCountdown">D-27</b> 10/25 시험</div>
     </header>
 
-    <section class="hero" style="margin-top:0">
-      <p class="eyebrow">Lecture-free study plan</p>
-      <h1>30시간 안에<br>합격선 만들기</h1>
-      <p class="hero-copy">강의 완주보다 출제되는 것을 먼저. PDF 암기 → 코딩 반복 → 기출 보완 순서로 준비하세요.</p>
-      <div class="hero-meta"><span class="pill">약 4주</span><span class="pill">이론 10 + 코딩 10</span><span class="pill">목표 70–80점</span></div>
+    <section class="hero study-hero" style="margin-top:0">
+      <p class="eyebrow">2026. 9. 29. 화요일 → 10. 25. 일요일</p>
+      <h1>하루 목표, 하나씩 완료하기</h1>
+      <p class="hero-copy">26일 학습 + 시험 당일 체크. 코딩은 매일 20분씩.</p>
+      <div class="hero-meta"><span class="pill" id="totalBudget">총 29시간 30분 계획</span><span class="pill">4주 · 평일 기본 1시간</span></div>
     </section>
 
     <div class="progress-card" aria-live="polite">
       <div class="ring" id="ring" style="--p:0%"><strong id="percent">0%</strong></div>
-      <div><h2 id="progressTitle">첫 체크를 시작해보세요</h2><p id="progressCopy">핵심 루틴 0 / 12 완료</p><div class="mini" style="--p:0%"><span id="bar"></span></div></div>
+      <div><h2 id="progressTitle">학습 진도</h2><p id="progressCopy">날짜별 목표를 불러오는 중입니다.</p><div class="mini" style="--p:0%"><span id="bar"></span></div></div>
     </div>
 
     <section id="todo">
-      <div class="section-head"><div><p>매일 조금씩</p><h2>합격 체크리스트</h2></div><button class="reset" id="resetBtn" type="button">초기화</button></div>
-      <div class="filter-row" role="tablist" aria-label="학습 항목 필터">
-        <button class="filter active" data-filter="all" type="button">전체</button><button class="filter" data-filter="theory" type="button">이론</button><button class="filter" data-filter="code" type="button">코딩</button><button class="filter" data-filter="final" type="button">막판 점검</button>
-      </div>
-      <div class="todo-list" id="todoList">
-        <label class="todo" data-type="theory"><input type="checkbox" data-id="t1"><span class="check"></span><span class="todo-copy"><span class="todo-title">2024년 기출 1회 풀기</span><span class="todo-desc">점수보다 문제 형태와 답안 길이를 익히기</span><span class="tag">감 잡기</span></span></label>
-        <label class="todo" data-type="theory"><input type="checkbox" data-id="t2"><span class="check"></span><span class="todo-copy"><span class="todo-title">2024년 기출 2회 풀기</span><span class="todo-desc">틀린 문제 옆에 키워드 한 줄만 적기</span><span class="tag">감 잡기</span></span></label>
-        <label class="todo" data-type="theory"><input type="checkbox" data-id="t3"><span class="check"></span><span class="todo-copy"><span class="todo-title">2024년 기출 3회 풀기</span><span class="todo-desc">자주 반복되는 개념 표시하기</span><span class="tag">감 잡기</span></span></label>
-        <label class="todo" data-type="theory"><input type="checkbox" data-id="t4"><span class="check"></span><span class="todo-copy"><span class="todo-title">요약 PDF 1회독</span><span class="todo-desc">설명 → 정답 매칭 방식으로 소리 내어 확인</span><span class="tag">핵심 암기</span></span></label>
-        <label class="todo" data-type="theory"><input type="checkbox" data-id="t5"><span class="check"></span><span class="todo-copy"><span class="todo-title">요약 PDF 2회독</span><span class="todo-desc">가리고 바로 답하지 못한 항목만 표시</span><span class="tag">핵심 암기</span></span></label>
-        <label class="todo" data-type="theory"><input type="checkbox" data-id="t6"><span class="check"></span><span class="todo-copy"><span class="todo-title">필수 7개 개념 복습</span><span class="todo-desc">테스트 · SOLID · GoF · 보안 · 정규형 · 튜플/필드</span><span class="tag">핵심 암기</span></span></label>
-        <label class="todo" data-type="code"><input type="checkbox" data-id="t7"><span class="check"></span><span class="todo-copy"><span class="todo-title">C 문제 집중 풀이</span><span class="todo-desc">포인터, 배열, 반복문, 출력 형식 확인</span><span class="tag code">코딩</span></span></label>
-        <label class="todo" data-type="code"><input type="checkbox" data-id="t8"><span class="check"></span><span class="todo-copy"><span class="todo-title">Java 문제 집중 풀이</span><span class="todo-desc">상속, 오버라이딩, 예외, 실행 순서 확인</span><span class="tag code">코딩</span></span></label>
-        <label class="todo" data-type="code"><input type="checkbox" data-id="t9"><span class="check"></span><span class="todo-copy"><span class="todo-title">Python 문제 집중 풀이</span><span class="todo-desc">슬라이싱, 자료형, 함수 실행 결과 확인</span><span class="tag code">코딩</span></span></label>
-        <label class="todo" data-type="final"><input type="checkbox" data-id="t10"><span class="check"></span><span class="todo-copy"><span class="todo-title">2025년 기출 실전처럼 풀기</span><span class="todo-desc">시험 1주 전까지 남겨두었다가 시간 재고 풀기</span><span class="tag final">마지막 1주</span></span></label>
-        <label class="todo" data-type="final"><input type="checkbox" data-id="t11"><span class="check"></span><span class="todo-copy"><span class="todo-title">반복 실수만 다시 풀기</span><span class="todo-desc">%u·%x처럼 형태가 바뀌는 지점을 비교</span><span class="tag final">마지막 1주</span></span></label>
-        <label class="todo" data-type="final"><input type="checkbox" data-id="t12"><span class="check"></span><span class="todo-copy"><span class="todo-title">시험장 답안 원칙 확인</span><span class="todo-desc">/23 범위까지 쓰기 · 확실히 아는 답을 그대로 쓰기</span><span class="tag final">시험 전날</span></span></label>
-      </div>
+      <div class="section-head"><div><p>9월 29일 시작 · 매일 코딩 20분</p><h2>날짜별 학습 목표</h2></div><div class="planner-actions"><button class="jump-today" id="todayBtn" type="button">첫날 목표 ↓</button><button class="reset" id="resetBtn" type="button">초기화</button></div></div>
+      <div class="week-tabs" id="weekTabs" role="group" aria-label="학습 주차 선택"></div>
+      <div class="week-overview"><h3 id="weekTitle"></h3><p id="weekGoal"></p><p id="weekBudget"></p><p id="weekNote"></p></div>
+      <div class="sr-only" id="plannerStatus" role="status"></div>
+      <div class="todo-list" id="todoList"><p>날짜별 목표를 불러오는 중입니다.</p></div>
+      <p class="plan-footnote">체크 기록은 이 기기·브라우저에 자동 저장됩니다. 분량이 밀리면 일요일 보충 시간을 활용하세요. 기출 연도별 전체 시험지는 별도로 준비하고, 코딩은 각 날짜의 단계 학습에서 시작합니다.</p>
+      <a class="coding-entry" href="#coding"><strong>Java는 알고, C·Python은 처음이라면</strong><span>나에게 맞춘 코딩 4단계 보기 →</span></a>
     </section>
 
     <section id="strategy">
-      <div class="section-head"><div><p>총 30시간 이내</p><h2>4주 압축 로드맵</h2></div></div>
-      <div class="roadmap">
-        <div class="week"><span class="week-num">Week 1</span><div><strong>기출로 시험 감 잡기</strong><p>2024년 3회분을 풀며 문제 구성과 약점을 파악합니다.</p></div></div>
-        <div class="week"><span class="week-num">Week 2</span><div><strong>요약본 통째로 암기</strong><p>설명을 보면 단답이 바로 떠오르게 반복합니다.</p></div></div>
-        <div class="week"><span class="week-num">Week 3</span><div><strong>약한 언어 집중</strong><p>C·Java·Python 중 자주 틀리는 문제만 많이 풉니다.</p></div></div>
-        <div class="week"><span class="week-num">Week 4</span><div><strong>최신 기출 + 실수 제거</strong><p>매일 1시간, 전날은 오답과 암기에 집중합니다.</p></div></div>
-      </div>
+      <div class="section-head"><div><p>9/29–10/24 학습 · 10/25 시험</p><h2>4주 압축 로드맵</h2></div></div>
+      <div class="roadmap" id="roadmap"></div>
       <div class="rule"><div class="big">문장을 외우지 말고<br>“설명 → 답”을 연결하세요.</div><p>실기는 서술형이 아니라 주관식 단답형입니다. 키워드가 보이는 순간 정답이 떠오르는 연습이 핵심입니다.</p></div>
     </section>
 
@@ -111,17 +96,16 @@
       </div>
     </section>
 
-    <section id="full-notes">
-      <div class="section-head"><div><p>PDF 원문 텍스트</p><h2>정리본 전체</h2></div><p>11개 단원</p></div>
-      <div class="notes-panel">
-        <div class="search-wrap"><input class="note-search" id="noteSearch" type="search" placeholder="예: SOLID, 정규화, 라우팅" aria-label="정리본 검색"></div>
-        <div class="search-result" id="searchResult">단원을 눌러 전체 내용을 펼쳐보세요.</div>
-        <div class="chapters" id="chapters"><div class="notes-loading">정리본을 불러오는 중입니다…</div></div>
-      </div>
-    </section>
 
     <section id="resources">
-      <div class="section-head"><div><p>사이트 안에서 바로 보기</p><h2>PDF 자료함</h2></div></div>
+      <div class="section-head"><div><p>사이트 안에서 바로 보기</p><h2>공부 자료함</h2></div></div>
+      <article class="coding-resource">
+        <h3>매일 코딩 20분 · 잡코딩</h3>
+        <p>기초 단계는 5분 개념 → 10분 풀이 → 5분 복습.<br>실전 단계는 2분 규칙 확인 → 13분 풀이 → 5분 복습.</p>
+        <a href="#coding">C·Python 입문부터 단계별 학습 →</a><br>
+        <a href="https://complainrevolutionist.tistory.com/" target="_blank" rel="noopener noreferrer">잡코딩 정보 블로그 열기 ↗<span class="sr-only"> (새 창)</span></a>
+        <div class="language-links"><a href="https://complainrevolutionist.tistory.com/38" target="_blank" rel="noopener noreferrer">C ↗</a><a href="https://complainrevolutionist.tistory.com/39" target="_blank" rel="noopener noreferrer">Java ↗</a><a href="https://complainrevolutionist.tistory.com/40" target="_blank" rel="noopener noreferrer">Python ↗</a><a href="https://complainrevolutionist.tistory.com/51" target="_blank" rel="noopener noreferrer">SQL ↗</a></div>
+      </article>
       <div class="pdf-grid">
         <article class="pdf-card"><div class="pdf-top"><div class="pdf-icon">PDF</div><div><h3>실기 요약노트<br>1·2·3과목</h3><p>15페이지 · 핵심 이론 암기</p></div></div><div class="pdf-actions"><button class="btn primary open-pdf" data-src="assets/summary-notes.pdf" data-title="정보처리기사 실기 요약노트" type="button">바로 보기</button><a class="btn secondary" href="assets/summary-notes.pdf" download aria-label="요약노트 PDF 다운로드">저장</a></div></article>
         <article class="pdf-card"><div class="pdf-top"><div class="pdf-icon">PDF</div><div><h3>실기 기출풀이집<br>프로그래밍 언어편</h3><p>20페이지 · Python·Java 일부</p></div></div><div class="pdf-actions"><button class="btn primary open-pdf" data-src="assets/programming-past-exams.pdf" data-title="정보처리기사 실기 기출풀이집" type="button">바로 보기</button><a class="btn secondary" href="assets/programming-past-exams.pdf" download aria-label="기출풀이집 PDF 다운로드">저장</a></div></article>
@@ -133,7 +117,58 @@
     <footer><strong>개인 합격 경험을 바탕으로 만든 학습 루틴</strong><br>출제 비율과 점수는 회차에 따라 달라질 수 있습니다.</footer>
   </main>
 
-  <nav class="bottom-nav" aria-label="주요 메뉴"><a href="#todo" class="active"><span class="nav-icon">✓</span>할 일</a><a href="#strategy"><span class="nav-icon">⌁</span>전략</a><a href="#full-notes"><span class="nav-icon">≡</span>정리본</a><a href="#resources"><span class="nav-icon">▤</span>PDF</a></nav>
+  <main class="shell notes-screen" id="full-notes" hidden>
+    <header class="reader-top"><a class="reader-back" href="#todo">← 날짜별 목표</a><span class="reader-meta">19페이지 · 11개 단원</span></header>
+    <h1 class="reader-heading">정리본 읽고, 떠올리기</h1>
+    <p class="reader-intro">설명을 읽고 정답을 말해보세요. 아래 버튼으로 소제목과 핵심 용어를 가릴 수 있어요.</p>
+    <div class="quiz-start"><button id="startQuiz" type="button" disabled>시험보기 <span aria-hidden="true">→</span></button><p id="quizStartHelp">정리본에서 문제를 준비하는 중입니다…</p><a class="quiz-checked-link" id="viewCheckedQuiz" href="#quiz/checked"><span>✓ 체크 따로보기</span><span class="quiz-checked-count">0</span></a><p>체크한 문제는 이 기기·브라우저에 저장됩니다.</p></div>
+    <div class="notes-panel">
+      <div class="search-wrap"><input class="note-search" id="noteSearch" type="search" placeholder="예: SOLID, 정규화, 라우팅" aria-label="정리본 검색"></div>
+      <div class="notes-toolbar"><span class="reader-meta">원문 순서 그대로</span><button id="expandNotes" type="button">전체 펼치기</button></div>
+      <div class="search-result" id="searchResult" role="status"></div>
+      <div class="chapters" id="chapters"><div class="notes-loading">정리본을 불러오는 중입니다…</div></div>
+    </div>
+  </main>
+  <aside class="reader-float" id="readerControls" aria-label="정리본 암기 도구" hidden>
+    <div><strong>설명 → 정답</strong><span id="readerMode">소제목·핵심 용어 가리기</span></div>
+    <button id="hideTitles" type="button" aria-pressed="false" aria-controls="chapters">제목 숨기기</button>
+  </aside>
+
+  <main class="shell quiz-screen" id="quiz" hidden>
+    <header class="reader-top"><a class="reader-back" href="#full-notes">← 정리본으로</a><span class="reader-meta" id="quizMode">랜덤 시험</span></header>
+    <div class="quiz-heading"><h1>설명 보고 떠올리기</h1><p id="quizIntro">정답을 생각한 뒤 확인하세요. 다시 보고 싶은 문제는 체크해두세요.</p></div>
+    <nav class="quiz-mode-links" aria-label="시험 문제 모음"><a href="#quiz" aria-current="page">전체 문제</a><a href="#quiz/checked">✓ 체크 따로보기 <span class="quiz-checked-count">0</span></a></nav>
+    <div class="quiz-progress"><span id="quizCounter" role="status">문제 준비 중</span><progress id="quizProgress" max="1" value="0" aria-label="시험 진행"></progress></div>
+    <article class="quiz-card" id="quizCard" hidden>
+      <div class="quiz-card-head"><h2 id="quizQuestionHeading" tabindex="-1">문제</h2><label class="quiz-check"><input id="checkQuizQuestion" type="checkbox" disabled><span>복습 체크</span></label></div>
+      <div class="quiz-prompt" id="quizPrompt"></div>
+      <div class="quiz-answer-hidden" id="quizAnswerHidden">제목을 떠올려보세요</div>
+      <div class="quiz-answer" id="quizAnswerBox" role="status" hidden><span class="quiz-answer-label">정답</span><strong id="quizAnswer"></strong><p id="quizSource"></p></div>
+    </article>
+    <p class="quiz-check-status" id="quizCheckStatus" role="status"></p>
+    <div class="quiz-message" id="quizMessage" role="status" tabindex="-1"></div>
+    <button class="quiz-restart" id="restartQuiz" type="button" hidden>다시 섞어서 시험보기</button>
+  </main>
+  <aside class="quiz-controls" id="quizControls" aria-label="시험 문제 이동" hidden>
+    <button id="revealQuizAnswer" type="button" aria-controls="quizAnswerBox" aria-expanded="false" disabled>정답 확인</button>
+    <button id="nextQuizQuestion" type="button" disabled>다음 문제 →</button>
+  </aside>
+
+  <main class="shell coding-screen" id="coding" hidden>
+    <header class="reader-top"><a class="reader-back" id="codingBack" href="#todo">← 날짜별 목표</a><span class="reader-meta">매일 20분</span></header>
+    <p class="coding-kicker">JAVA 경험자 · C / PYTHON 입문</p>
+    <h1 class="reader-heading">코딩도, 한 단계씩</h1>
+    <p class="reader-intro">아는 Java와 비교하며 C·Python을 익히고,<br>실기용 실행 결과 추적으로 연결하세요.</p>
+    <p class="coding-progress" id="codingProgress"></p>
+    <nav class="coding-stages" id="codingStages" aria-label="코딩 학습 단계"></nav>
+    <label class="coding-day-label" for="codingDay">학습 날짜 선택</label>
+    <select id="codingDay" class="coding-day-select"></select>
+    <div id="codingLesson"></div>
+    <div class="coding-completion"><button id="codingDone" type="button" aria-pressed="false">오늘 코딩 학습 완료</button><p id="codingStatus" role="status"></p></div>
+    <aside class="coding-scope"><strong>정보처리기사 실기에 맞춘 학습</strong><p>실기는 필답형이며 프로그래밍 언어 활용과 SQL 응용 등을 포함합니다. 이 코스는 C·Java·Python의 문법 읽기·실행 추적 중심으로 구성한 개인 학습 계획이며, 출제 문항 수나 특정 유형의 출제를 보장하지 않습니다. SQL은 날짜별 목표의 별도 과제로 유지했어요.</p><a href="https://www.q-net.or.kr/crf005.do?gId=&amp;gSite=Q&amp;id=crf00503s02&amp;jmCd=1320&amp;jmInfoDivCcd=B0" target="_blank" rel="noopener noreferrer">Q-Net 공식 시험 안내 ↗<span class="sr-only"> (새 창)</span></a></aside>
+  </main>
+
+  <nav class="bottom-nav" aria-label="주요 메뉴"><a href="#todo" class="active"><span class="nav-icon">✓</span>할 일</a><a href="#coding"><span class="nav-icon">{ }</span>코딩</a><a href="#strategy"><span class="nav-icon">⌁</span>전략</a><a href="#full-notes"><span class="nav-icon">≡</span>정리본</a><a href="#resources"><span class="nav-icon">▤</span>자료</a></nav>
 
   <div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-labelledby="viewerTitle">
     <div class="viewer-head"><button class="icon-btn" id="closeViewer" type="button" aria-label="PDF 닫기">←</button><div class="viewer-title" id="viewerTitle">PDF</div><a class="icon-btn" id="externalPdf" href="#" target="_blank" rel="noopener" aria-label="새 창에서 열기" style="display:grid;place-items:center;text-decoration:none">↗</a></div>
@@ -141,31 +176,6 @@
   </div>
   <div class="toast" id="toast" role="status">진도가 저장됐어요</div>
 
-  <script>
-    (()=>{
-      const KEY='info-engineer-pass-v1';
-      const boxes=[...document.querySelectorAll('.todo input')];
-      const toast=document.getElementById('toast');
-      let timer;
-      const saved=JSON.parse(localStorage.getItem(KEY)||'{}');
-      boxes.forEach(b=>b.checked=!!saved[b.dataset.id]);
-      function flash(msg){toast.textContent=msg;toast.classList.add('show');clearTimeout(timer);timer=setTimeout(()=>toast.classList.remove('show'),1400)}
-      function render(){const done=boxes.filter(b=>b.checked).length;const pct=Math.round(done/boxes.length*100);document.getElementById('ring').style.setProperty('--p',pct+'%');document.getElementById('percent').textContent=pct+'%';document.getElementById('bar').style.width=pct+'%';document.getElementById('progressCopy').textContent=`핵심 루틴 ${done} / ${boxes.length} 완료`;document.getElementById('progressTitle').textContent=done===boxes.length?'시험 준비 완료!':done>=9?'마지막 점검만 남았어요':done>=4?'좋아요, 흐름을 탔어요':'첫 체크를 시작해보세요'}
-      boxes.forEach(b=>b.addEventListener('change',()=>{saved[b.dataset.id]=b.checked;localStorage.setItem(KEY,JSON.stringify(saved));render();flash(b.checked?'완료로 저장했어요':'완료 표시를 해제했어요')}));
-      document.getElementById('resetBtn').addEventListener('click',()=>{if(confirm('모든 체크 기록을 초기화할까요?')){boxes.forEach(b=>b.checked=false);localStorage.removeItem(KEY);Object.keys(saved).forEach(k=>delete saved[k]);render();flash('진도를 초기화했어요')}});
-      document.querySelectorAll('.filter').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.filter').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.todo').forEach(row=>row.hidden=btn.dataset.filter!=='all'&&row.dataset.type!==btn.dataset.filter)}));
-      const chaptersEl=document.getElementById('chapters'),search=document.getElementById('noteSearch'),result=document.getElementById('searchResult');let chapterData=[];
-      const escapeHtml=s=>s.replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-      fetch('assets/full-notes.txt').then(r=>{if(!r.ok)throw new Error();return r.text()}).then(raw=>{const cleaned=raw.replace(/\f/g,'\n').trim();chapterData=cleaned.split(/(?=^\d+단원\s)/m).filter(Boolean).map((text,i)=>({text,title:(text.split('\n')[0]||`${i+1}단원`).trim()}));drawChapters()}).catch(()=>{chaptersEl.innerHTML='<div class="notes-loading">정리본을 불러오지 못했습니다. PDF 자료함에서 원문을 열어주세요.</div>'});
-      function drawChapters(){const q=search.value.trim();let shown=0;chaptersEl.innerHTML=chapterData.map((c,i)=>{const match=!q||c.text.toLowerCase().includes(q.toLowerCase());if(match)shown++;let body=escapeHtml(c.text);if(q){const safe=q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');body=body.replace(new RegExp(safe,'gi'),m=>`<mark>${m}</mark>`)}return `<details class="chapter" ${match?'':'hidden'} ${q&&match?'open':''}><summary>${escapeHtml(c.title)}</summary><pre>${body}</pre></details>`}).join('');result.textContent=q?`“${q}” 포함 단원 ${shown}개`:'단원을 눌러 전체 내용을 펼쳐보세요.'}
-      search.addEventListener('input',drawChapters);
-      const viewer=document.getElementById('viewer'),frame=document.getElementById('pdfFrame'),title=document.getElementById('viewerTitle'),external=document.getElementById('externalPdf');
-      document.querySelectorAll('.open-pdf').forEach(btn=>btn.addEventListener('click',()=>{title.textContent=btn.dataset.title;frame.src=btn.dataset.src;external.href=btn.dataset.src;viewer.classList.add('open');document.body.style.overflow='hidden';document.getElementById('closeViewer').focus()}));
-      function close(){viewer.classList.remove('open');frame.src='';document.body.style.overflow=''}
-      document.getElementById('closeViewer').addEventListener('click',close);document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
-      const nav=[...document.querySelectorAll('.bottom-nav a')];nav.forEach(a=>a.addEventListener('click',()=>{nav.forEach(x=>x.classList.remove('active'));a.classList.add('active')}));
-      render();
-    })();
-  </script>
+  <script type="module" src="app.mjs"></script>
 </body>
 </html>
