@@ -1,38 +1,49 @@
 import { showPlanDay } from './planner.mjs';
 import { initNotes } from './notes.mjs';
 import { initQuiz } from './quiz.mjs';
+import { parseQuizScope } from './quiz-scope.mjs';
 import { initCoding } from './coding.mjs';
+import { initGame } from './game.mjs';
 
 const quiz = initQuiz();
 const coding = initCoding();
-initNotes({ onLoad: quiz.setChapters, onError: quiz.loadFailed });
+const game = initGame();
+initNotes({
+  onLoad(chapters) { quiz.setChapters(chapters); game.setChapters(chapters); },
+  onError() { quiz.loadFailed(); game.loadFailed(); }
+});
 const dashboard = document.getElementById('studyDashboard');
 const notesScreen = document.getElementById('full-notes');
 const readerControls = document.getElementById('readerControls');
 const quizScreen = document.getElementById('quiz');
 const quizControls = document.getElementById('quizControls');
 const codingScreen = document.getElementById('coding');
+const gameScreen = document.getElementById('game');
 const nav = [...document.querySelectorAll('.bottom-nav a')];
 
 function route() {
   const hash = location.hash || '#todo';
   const reading = hash === '#full-notes';
-  const testing = hash === '#quiz' || hash === '#quiz/checked';
+  const testing = parseQuizScope(hash) !== null;
   const learningCode = hash === '#coding' || hash.startsWith('#coding/');
-  dashboard.hidden = reading || testing || learningCode;
+  const gaming = hash === '#game';
+  if (!gaming) game.leave();
+  dashboard.hidden = reading || testing || learningCode || gaming;
   notesScreen.hidden = !reading;
   readerControls.hidden = !reading;
   quizScreen.hidden = !testing;
   quizControls.hidden = !testing;
   codingScreen.hidden = !learningCode;
+  gameScreen.hidden = !gaming;
   nav.forEach(link => {
-    const active = link.hash === hash || (hash.startsWith('#day-') && link.hash === '#todo') || (testing && link.hash === '#full-notes') || (learningCode && link.hash === '#coding');
+    const active = link.hash === hash || (hash.startsWith('#day-') && link.hash === '#todo') || ((testing || gaming) && link.hash === '#full-notes') || (learningCode && link.hash === '#coding');
     link.classList.toggle('active', active);
     if (active) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
   });
   // The destination might have been hidden when the browser first handled the hash.
   if (testing) { quiz.enter(); window.scrollTo(0, 0); }
+  else if (gaming) { game.enter(); window.scrollTo(0, 0); }
   else if (learningCode) { coding.enter(hash); window.scrollTo(0, 0); }
   else if (reading) window.scrollTo(0, 0);
   else if (location.hash) {

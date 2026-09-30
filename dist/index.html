@@ -46,6 +46,7 @@
     @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
   </style>
   <link rel="stylesheet" href="study.css">
+  <link rel="stylesheet" href="game.css">
 </head>
 <body>
   <main class="shell" id="studyDashboard">
@@ -74,6 +75,7 @@
       <div class="todo-list" id="todoList"><p>날짜별 목표를 불러오는 중입니다.</p></div>
       <p class="plan-footnote">체크 기록은 이 기기·브라우저에 자동 저장됩니다. 분량이 밀리면 일요일 보충 시간을 활용하세요. 기출 연도별 전체 시험지는 별도로 준비하고, 코딩은 각 날짜의 단계 학습에서 시작합니다.</p>
       <a class="coding-entry" href="#coding"><strong>Java는 알고, C·Python은 처음이라면</strong><span>나에게 맞춘 코딩 4단계 보기 →</span></a>
+      <a class="game-entry game-entry-small" href="#game"><span class="game-entry-icon" aria-hidden="true">✦</span><span><strong>암기도 게임처럼</strong><small>4지선다 10문제 · 게임하기 →</small></span></a>
     </section>
 
     <section id="strategy">
@@ -121,7 +123,12 @@
     <header class="reader-top"><a class="reader-back" href="#todo">← 날짜별 목표</a><span class="reader-meta">19페이지 · 11개 단원</span></header>
     <h1 class="reader-heading">정리본 읽고, 떠올리기</h1>
     <p class="reader-intro">설명을 읽고 정답을 말해보세요. 아래 버튼으로 소제목과 핵심 용어를 가릴 수 있어요.</p>
-    <div class="quiz-start"><button id="startQuiz" type="button" disabled>시험보기 <span aria-hidden="true">→</span></button><p id="quizStartHelp">정리본에서 문제를 준비하는 중입니다…</p><a class="quiz-checked-link" id="viewCheckedQuiz" href="#quiz/checked"><span>✓ 체크 따로보기</span><span class="quiz-checked-count">0</span></a><p>체크한 문제는 이 기기·브라우저에 저장됩니다.</p></div>
+    <div class="quiz-start">
+      <div class="quiz-scope-picker"><label for="quizStartChapter">시험 볼 단원</label><select id="quizStartChapter" disabled><option value="all">전체 단원</option></select></div>
+      <button id="startQuiz" type="button" disabled>시험보기 <span aria-hidden="true">→</span></button><p id="quizStartHelp">정리본에서 문제를 준비하는 중입니다…</p>
+      <a class="quiz-checked-link" id="viewCheckedQuiz" href="#quiz/checked"><span>✓ 체크 따로보기</span><span class="quiz-checked-count">0</span></a><p>체크한 문제는 이 기기·브라우저에 저장됩니다.</p>
+    </div>
+    <a class="game-entry" href="#game"><span class="game-entry-icon" aria-hidden="true">✦</span><span><small>읽기만 하기 지루할 때</small><strong>게임하기 <span aria-hidden="true">→</span></strong><small>4지선다 · 타임어택 · 연속 정답 콤보</small></span></a>
     <div class="notes-panel">
       <div class="search-wrap"><input class="note-search" id="noteSearch" type="search" placeholder="예: SOLID, 정규화, 라우팅" aria-label="정리본 검색"></div>
       <div class="notes-toolbar"><span class="reader-meta">원문 순서 그대로</span><button id="expandNotes" type="button">전체 펼치기</button></div>
@@ -137,7 +144,8 @@
   <main class="shell quiz-screen" id="quiz" hidden>
     <header class="reader-top"><a class="reader-back" href="#full-notes">← 정리본으로</a><span class="reader-meta" id="quizMode">랜덤 시험</span></header>
     <div class="quiz-heading"><h1>설명 보고 떠올리기</h1><p id="quizIntro">정답을 생각한 뒤 확인하세요. 다시 보고 싶은 문제는 체크해두세요.</p></div>
-    <nav class="quiz-mode-links" aria-label="시험 문제 모음"><a href="#quiz" aria-current="page">전체 문제</a><a href="#quiz/checked">✓ 체크 따로보기 <span class="quiz-checked-count">0</span></a></nav>
+    <nav class="quiz-mode-links" aria-label="시험 문제 모음"><a href="#quiz" aria-current="page">전체 문제</a><a href="#quiz/checked">✓ 체크 따로보기 <span class="quiz-checked-count" id="quizScopeCheckedCount">0</span></a></nav>
+    <div class="quiz-scope-picker quiz-scope-panel"><label for="quizChapter">출제 단원</label><select id="quizChapter" disabled><option value="all">전체 단원</option></select><p id="quizScopeHelp">원하는 단원을 선택하면 해당 단원만 출제됩니다.</p></div>
     <div class="quiz-progress"><span id="quizCounter" role="status">문제 준비 중</span><progress id="quizProgress" max="1" value="0" aria-label="시험 진행"></progress></div>
     <article class="quiz-card" id="quizCard" hidden>
       <div class="quiz-card-head"><h2 id="quizQuestionHeading" tabindex="-1">문제</h2><label class="quiz-check"><input id="checkQuizQuestion" type="checkbox" disabled><span>복습 체크</span></label></div>
@@ -153,6 +161,51 @@
     <button id="revealQuizAnswer" type="button" aria-controls="quizAnswerBox" aria-expanded="false" disabled>정답 확인</button>
     <button id="nextQuizQuestion" type="button" disabled>다음 문제 →</button>
   </aside>
+
+  <main class="shell game-screen" id="game" hidden>
+    <header class="reader-top"><a class="reader-back" href="#full-notes">← 정리본으로</a><span class="game-label">QUIZ ARCADE</span></header>
+    <div id="gameLobby">
+      <div class="game-hero">
+        <div class="game-hero-art" aria-hidden="true"><span>?</span><i>✦</i><b>+1,000</b></div>
+        <p class="eyebrow">정리본으로 즐기는 4지선다</p>
+        <h1>정답을 골라,<br>콤보를 쌓아라.</h1>
+        <p>10문제 한 판! 기억 속 개념을 꺼내며<br>나의 최고 기록에 도전하세요.</p>
+        <div class="game-tags"><span>랜덤 10문제</span><span>연속 정답 보너스</span></div>
+      </div>
+      <div class="game-setup">
+        <label for="gameTime">문제당 제한시간</label>
+        <select id="gameTime"><option value="30">30초 · 기본 도전</option><option value="60">60초 · 여유롭게</option><option value="0">시간 제한 없음 · 연습</option></select>
+        <p class="game-record" id="gameBest">이 모드의 첫 기록을 만들어보세요.</p>
+        <button class="game-primary" id="startGame" type="button" disabled>게임 시작 <span aria-hidden="true">→</span></button>
+        <p class="game-help" id="gameLoadStatus" role="status">정리본에서 문제를 준비하고 있어요…</p>
+      </div>
+      <details class="game-rules"><summary>어떻게 점수를 얻나요?</summary><ul><li>정답은 1,000점. 빨리 맞히면 최대 500점을 더 받아요.</li><li>2연속 정답부터 콤보 보너스가 100점씩, 최대 400점까지 붙어요.</li><li>오답·시간 초과는 0점. 콤보가 끊기지만 다음 문제에 계속 도전할 수 있어요.</li><li>다른 화면으로 이동하면 자동으로 일시정지돼요. 새로고침하면 진행 중인 판은 끝나요.</li><li>시간 제한 없는 연습은 속도 보너스 없이 별도로 기록해요. 틀린 문제 재도전은 최고 기록에 포함하지 않아요.</li></ul></details>
+      <p class="game-footnote">정리본의 설명·용어로 만든 암기 보조 게임이에요. 실제 실기시험의 객관식 출제 형식이 아닙니다. 익숙해지면 보기 없는 <a href="#quiz">시험보기</a>로 확인하세요.</p>
+    </div>
+
+    <div id="gamePlay" hidden>
+      <div class="game-hud">
+        <div class="game-hud-row"><span id="gameCounter">1 / 10</span><strong><span id="gameScore">0</span><small>점</small></strong><span class="game-combo" id="gameCombo">콤보 준비</span><button id="pauseGame" type="button" aria-label="게임 일시정지">Ⅱ</button></div>
+        <div class="game-timer-row"><span id="gameTimerLabel">남은 시간</span><strong id="gameTimer" role="timer" aria-live="off">30초</strong></div>
+        <progress id="gameTimerBar" max="30" value="30" aria-label="남은 시간"></progress>
+      </div>
+      <div id="gameQuestionArea">
+        <article class="game-question-card"><p class="game-question-kicker" id="gameRoundLabel">정리본 랜덤 도전</p><h2 id="gameQuestionHeading" tabindex="-1">이 설명의 정답은?</h2><div class="game-prompt" id="gamePrompt"></div></article>
+        <div class="game-choices" id="gameChoices" role="group" aria-labelledby="gameQuestionHeading"></div>
+        <div class="game-feedback" id="gameFeedback" hidden><div role="status"><strong id="gameFeedbackTitle"></strong><p id="gameFeedbackAnswer"></p><p id="gamePoints"></p></div><p class="game-source" id="gameSource"></p><button class="game-primary" id="nextGameQuestion" type="button">다음 문제 →</button></div>
+      </div>
+      <div class="game-pause-panel" id="gamePaused" hidden><span class="game-pause-icon" aria-hidden="true">Ⅱ</span><h2 tabindex="-1" id="gamePausedHeading">잠깐 쉬어가요</h2><p>남은 시간은 그대로예요.<br>준비되면 이어서 도전하세요.</p><button class="game-primary" id="resumeGame" type="button">이어서 하기 →</button><button class="game-secondary" id="quitGame" type="button">이 판을 끝내고 처음으로</button></div>
+      <p class="sr-only" id="gameAnnouncement" role="status"></p>
+    </div>
+
+    <div class="game-result" id="gameResult" hidden>
+      <div class="game-result-top"><span class="game-result-medal" aria-hidden="true">✦</span><p class="game-label" id="gameResultMode"></p><h1 id="gameResultHeading" tabindex="-1">한 판 완료!</h1><p id="gameResultMessage"></p><strong class="game-final-score" id="gameFinalScore"></strong><span class="game-final-unit">POINTS</span><p class="game-new-best" id="gameNewBest" role="status"></p></div>
+      <div class="game-stats"><div><strong id="gameCorrectCount"></strong><span>맞힌 문제</span></div><div><strong id="gameMaxCombo"></strong><span>최대 콤보</span></div><div><strong id="gameAccuracy"></strong><span>정답률</span></div></div>
+      <div class="game-result-actions"><button class="game-primary" id="replayGame" type="button">새 문제로 한 판 더 →</button><button class="game-secondary" id="retryGameMistakes" type="button">틀린 문제 다시 풀기</button><button class="game-text-button" id="gameToLobby" type="button">시간 설정으로 돌아가기</button></div>
+      <details class="game-review"><summary id="gameReviewSummary">이번 판 정답 다시 보기</summary><div id="gameReviewList"></div></details>
+      <p class="game-footnote">최고 기록은 이 기기·브라우저에 저장됩니다. 다른 기기와 동기화되지는 않아요.</p>
+    </div>
+  </main>
 
   <main class="shell coding-screen" id="coding" hidden>
     <header class="reader-top"><a class="reader-back" id="codingBack" href="#todo">← 날짜별 목표</a><span class="reader-meta">매일 20분</span></header>
