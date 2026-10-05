@@ -1,4 +1,4 @@
-import { days, weeks, dayMinutes, weekMinutes, totalMinutes, formatMinutes, koreaDate, weekForDate, EXAM_DATE } from './schedule.mjs';
+import { days, weeks, dayMinutes, weekMinutes, totalMinutes, formatMinutes, koreaDate, weekForDate, EXAM_DATE } from './schedule.mjs?v=20261001-routine2';
 
 const KEY = 'info-engineer-daily-2026-10-25-v1';
 const tasks = days.flatMap(day => day.tasks);
@@ -40,9 +40,12 @@ function renderCards() {
         <div><div class="day-date"><time datetime="${day.date}">${shortDate(day.date)} (${weekday(day.date)})</time>${day.date === today ? '<span class="today-badge">오늘</span>' : ''}</div><h3>${day.title}</h3></div>
         <span class="day-time">${dayMinutes(day) ? formatMinutes(dayMinutes(day)) : '시험일'}</span>
       </header>
-      <div class="day-tasks">${day.tasks.map(task => `
+      ${day.focus ? `<div class="day-focus"><span class="focus-label">${day.focus.chapter ? `${day.focus.chapter}단원 · ` : ''}${day.focus.review ? '새 암기 없이 복습' : `오늘 새 용어 ${day.focus.terms.length}개`}</span><p>${day.focus.terms.join(' · ')}</p><small>${day.focus.review ? '위 용어 중 헷갈렸던 것부터 다시 봐요.' : '단원 전체가 아니라 이 용어들만 봐요.'}</small></div>` : ''}
+      <div class="day-tasks">${day.tasks.map((task, index) => `
+        ${task.session && task.session !== day.tasks[index - 1]?.session ? `<div class="session-heading ${task.session}"><span>${task.session === 'morning' ? '01' : '02'}</span><strong>${task.session === 'morning' ? (day.weekend ? '아침 · 가볍게 읽기' : '아침 출근길') : (day.weekend ? '저녁 · 복습하고 코딩' : '퇴근 후')}</strong><small>${formatMinutes(day.tasks.filter(item => item.session === task.session).reduce((sum, item) => sum + item.minutes, 0))}</small></div>` : ''}
         <div class="task-block${task.type === 'code' ? ' coding-task' : ''}"><label class="todo daily-task"><input type="checkbox" data-id="${task.id}" ${isDone(task) ? 'checked' : ''}><span class="check" aria-hidden="true"></span><span class="todo-copy"><span class="task-meta">${typeNames[task.type]}${task.minutes ? ` · ${task.minutes}분` : ''}</span><span class="todo-title">${task.title}</span><span class="todo-desc">${task.detail}</span></span></label>${task.href ? `<a class="coding-link" href="${task.href}" ${task.internal ? '' : 'target="_blank" rel="noopener noreferrer"'}>${task.linkLabel} <span aria-hidden="true">${task.internal ? '→' : '↗'}</span>${task.internal ? '' : '<span class="sr-only"> (새 창)</span>'}</a>` : ''}</div>
       `).join('')}</div>
+      ${day.focus ? '<p class="day-minimum"><strong>피곤한 날은 여기까지만</strong> 아침 용어 2개를 다시 보고 코딩 20분. 못 외운 것은 체크만 해두고, 내일 분량에 더하지 않아요.</p>' : ''}
       <footer class="day-footer"><span class="day-progress" id="progress-${day.date}"></span>${day.resource ? `<a href="${day.resource.href}">${day.resource.label} <span aria-hidden="true">↗</span></a>` : '<span>차분하게, 아는 것부터.</span>'}</footer>
     </article>
   `).join('');
@@ -103,6 +106,17 @@ export function showPlanDay(date) {
   if (day) selectWeek(day.week, false);
 }
 
+export function showTodayPlan() {
+  if (koreaDate() !== today) refreshDate();
+  selectWeek(weekForDate(today), false);
+  const target = today < days[0].date ? days[0].date : today > EXAM_DATE ? EXAM_DATE : today;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.getElementById(`day-${target}`).scrollIntoView({
+    behavior: reducedMotion ? 'instant' : 'smooth', block: 'start'
+  });
+  status.textContent = `${shortDate(target)} 목표로 이동했어요.`;
+}
+
 export const getTaskCompletion = id => saved[id] === true;
 export function setTaskCompletion(id, done) {
   if (!tasks.some(task => task.id === id)) return false;
@@ -135,12 +149,7 @@ weekTabs.addEventListener('click', event => {
   if (button) selectWeek(Number(button.dataset.week));
 });
 
-document.getElementById('todayBtn').addEventListener('click', () => {
-  if (koreaDate() !== today) refreshDate();
-  selectWeek(weekForDate(today));
-  const target = today < days[0].date ? days[0].date : today > EXAM_DATE ? EXAM_DATE : today;
-  document.getElementById(`day-${target}`).scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
+document.getElementById('todayBtn').addEventListener('click', showTodayPlan);
 
 document.getElementById('resetBtn').addEventListener('click', () => {
   if (!confirm('날짜별 목표의 완료 기록을 모두 초기화할까요?')) return;

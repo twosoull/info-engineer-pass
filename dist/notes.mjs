@@ -38,7 +38,14 @@ export function parseChapters(raw) {
   });
 }
 
+export function parseNotesChapter(hash) {
+  if (typeof hash !== 'string') return null;
+  const match = /^#full-notes\/chapter\/([1-9]|1[01])$/.exec(hash);
+  return match && match[0] === hash ? Number(match[1]) : null;
+}
+
 export function initNotes({ onLoad = () => {}, onError = () => {} } = {}) {
+  const screen = document.getElementById('full-notes');
   const chaptersEl = document.getElementById('chapters');
   const search = document.getElementById('noteSearch');
   const result = document.getElementById('searchResult');
@@ -48,6 +55,9 @@ export function initNotes({ onLoad = () => {}, onError = () => {} } = {}) {
   let chapters = [];
   let hidden = false;
   let allExpanded = false;
+  let loaded = false;
+  let pendingHash = null;
+  let navigationVersion = 0;
   try { hidden = localStorage.getItem('info-engineer-hide-answers-v1') === 'true'; } catch {}
 
   function addText(parent, text) {
@@ -162,6 +172,7 @@ export function initNotes({ onLoad = () => {}, onError = () => {} } = {}) {
     const fragment = document.createDocumentFragment();
     for (const chapter of matches) {
       const details = document.createElement('details');
+      details.id = `note-chapter-${chapters.indexOf(chapter) + 1}`;
       details.className = 'chapter';
       details.open = !!query || allExpanded;
       const summary = document.createElement('summary');
@@ -173,6 +184,28 @@ export function initNotes({ onLoad = () => {}, onError = () => {} } = {}) {
     result.textContent = query ? (matches.length ? `“${search.value.trim()}” 포함 단원 ${matches.length}개` : '일치하는 내용이 없어요. 다른 키워드로 찾아보세요.') : '단원을 펼쳐 읽고, 아래 버튼으로 제목을 가려보세요.';
     applyMode();
     updateExpandLabel();
+  }
+
+  function openPendingChapter() {
+    const hash = pendingHash;
+    const chapterId = parseNotesChapter(hash);
+    if (!loaded || !chapterId || !chapters[chapterId - 1]
+      || location.hash !== hash || screen.hidden) return;
+    search.value = '';
+    allExpanded = false;
+    render();
+    const target = document.getElementById(`note-chapter-${chapterId}`);
+    target.open = true;
+    updateExpandLabel();
+    const version = navigationVersion;
+    requestAnimationFrame(() => {
+      // A fetch or queued frame may finish after the user has left this route.
+      if (version !== navigationVersion || location.hash !== hash || screen.hidden
+        || !target.isConnected || !screen.getClientRects().length) return;
+      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      target.scrollIntoView({ block: 'start', behavior: reduceMotion ? 'auto' : 'smooth' });
+      if (pendingHash === hash) pendingHash = null;
+    });
   }
 
   toggle.addEventListener('click', () => {
@@ -191,8 +224,23 @@ export function initNotes({ onLoad = () => {}, onError = () => {} } = {}) {
   fetch('assets/full-notes.txt').then(response => {
     if (!response.ok) throw new Error('notes unavailable');
     return response.text();
-  }).then(raw => { chapters = parseChapters(raw); render(); onLoad(chapters); }).catch(() => {
+  }).then(raw => {
+    chapters = parseChapters(raw);
+    loaded = true;
+    render();
+    onLoad(chapters);
+    openPendingChapter();
+  }).catch(() => {
     chaptersEl.textContent = '정리본을 불러오지 못했어요. PDF 자료함에서 원문을 열어주세요.';
     onError();
   });
+
+  return {
+    enter(hash) {
+      navigationVersion++;
+      pendingHash = parseNotesChapter(hash) ? hash : null;
+      if (pendingHash) openPendingChapter();
+      // The general reader route intentionally retains the current search/open state.
+    }
+  };
 }

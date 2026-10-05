@@ -45,7 +45,7 @@
     @media (min-width:640px){.shell{padding-left:24px;padding-right:24px}.hero{padding:34px}.pdf-grid{grid-template-columns:1fr 1fr}.roadmap{grid-template-columns:1fr 1fr}}
     @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
   </style>
-  <link rel="stylesheet" href="study.css">
+  <link rel="stylesheet" href="study.css?v=20261001-routine2">
   <link rel="stylesheet" href="game.css">
 </head>
 <body>
@@ -58,8 +58,8 @@
     <section class="hero study-hero" style="margin-top:0">
       <p class="eyebrow">2026. 9. 29. 화요일 → 10. 25. 일요일</p>
       <h1>하루 목표, 하나씩 완료하기</h1>
-      <p class="hero-copy">26일 학습 + 시험 당일 체크. 코딩은 매일 20분씩.</p>
-      <div class="hero-meta"><span class="pill" id="totalBudget">총 29시간 30분 계획</span><span class="pill">4주 · 평일 기본 1시간</span></div>
+      <p class="hero-copy">단원 통째로 말고, 하루 새 용어 3~5개만. 코딩은 20분씩.</p>
+      <div class="hero-meta"><span class="pill" id="totalBudget">학습 시간 계산 중</span><span class="pill">10/1부터 하루 50분</span></div>
     </section>
 
     <div class="progress-card" aria-live="polite">
@@ -68,12 +68,13 @@
     </div>
 
     <section id="todo">
-      <div class="section-head"><div><p>9월 29일 시작 · 매일 코딩 20분</p><h2>날짜별 학습 목표</h2></div><div class="planner-actions"><button class="jump-today" id="todayBtn" type="button">첫날 목표 ↓</button><button class="reset" id="resetBtn" type="button">초기화</button></div></div>
+      <div class="section-head"><div><p>10/1부터 가볍게 나눈 계획 · 10/25 시험</p><h2>날짜별 학습 목표</h2></div><div class="planner-actions"><button class="jump-today" id="todayBtn" type="button">첫날 목표 ↓</button><button class="reset" id="resetBtn" type="button">초기화</button></div></div>
+      <aside class="plan-routine" aria-label="하루 공부 순서"><h3>출근길엔 읽고, 저녁엔 떠올리기</h3><ol><li><strong>아침 출근길 10분</strong> — 오늘 적힌 용어 3~5개만 읽기</li><li><strong>퇴근 후 20분</strong> — 어제 2개 복습 → 아침 분량 가리고 답하기</li><li><strong>이어서 코딩 20분</strong> — 날짜별 단계 학습 1개</li></ol><p>주말에는 아침·저녁으로 똑같이 나눠요. 10/21부터는 새 암기 없이 배운 용어와 기출 소량 복습. 정리본 전체 암기가 아닌 핵심 우선 계획입니다.</p><p>9/29~9/30 목표와 기존 코딩 체크는 그대로 유지합니다. 바뀐 암기 목표는 새 체크로 시작하며, 이전 기록은 저장소에 남겨둡니다.</p></aside>
       <div class="week-tabs" id="weekTabs" role="group" aria-label="학습 주차 선택"></div>
       <div class="week-overview"><h3 id="weekTitle"></h3><p id="weekGoal"></p><p id="weekBudget"></p><p id="weekNote"></p></div>
       <div class="sr-only" id="plannerStatus" role="status"></div>
       <div class="todo-list" id="todoList"><p>날짜별 목표를 불러오는 중입니다.</p></div>
-      <p class="plan-footnote">체크 기록은 이 기기·브라우저에 자동 저장됩니다. 분량이 밀리면 일요일 보충 시간을 활용하세요. 기출 연도별 전체 시험지는 별도로 준비하고, 코딩은 각 날짜의 단계 학습에서 시작합니다.</p>
+      <p class="plan-footnote">체크 기록은 이 기기·브라우저에 자동 저장됩니다. 못 외운 용어는 복습 체크로 남기고 다음 날 분량에 쌓지 마세요. 20분이 지나면 저녁 복습을 마칩니다. 기출 시험지는 별도로 준비해 3~5문제씩만 활용합니다.</p>
       <a class="coding-entry" href="#coding"><strong>Java는 알고, C·Python은 처음이라면</strong><span>나에게 맞춘 코딩 4단계 보기 →</span></a>
       <a class="game-entry game-entry-small" href="#game"><span class="game-entry-icon" aria-hidden="true">✦</span><span><strong>암기도 게임처럼</strong><small>4지선다 10문제 · 게임하기 →</small></span></a>
     </section>
@@ -146,6 +147,12 @@
     <div class="quiz-heading"><h1>설명 보고 떠올리기</h1><p id="quizIntro">정답을 생각한 뒤 확인하세요. 다시 보고 싶은 문제는 체크해두세요.</p></div>
     <nav class="quiz-mode-links" aria-label="시험 문제 모음"><a href="#quiz" aria-current="page">전체 문제</a><a href="#quiz/checked">✓ 체크 따로보기 <span class="quiz-checked-count" id="quizScopeCheckedCount">0</span></a></nav>
     <div class="quiz-scope-picker quiz-scope-panel"><label for="quizChapter">출제 단원</label><select id="quizChapter" disabled><option value="all">전체 단원</option></select><p id="quizScopeHelp">원하는 단원을 선택하면 해당 단원만 출제됩니다.</p></div>
+    <details class="quiz-check-tools" id="quizCheckTools">
+      <summary id="quizCheckToolsSummary">체크 해제 <span id="quizClearCount">전체 0개</span></summary>
+      <p id="quizClearHelp">단원을 선택하면 해당 단원의 체크만 해제할 수 있어요. 문제와 날짜별 학습 진도는 유지됩니다.</p>
+      <div class="quiz-clear-actions"><button id="clearChapterChecks" type="button" disabled>이 단원 체크 해제</button><button id="clearAllChecks" type="button" disabled>전체 체크 해제</button></div>
+    </details>
+    <div class="quiz-clear-result"><p id="quizClearStatus" role="status"></p><button id="undoClearChecks" type="button" hidden>방금 해제한 체크 되돌리기</button></div>
     <div class="quiz-progress"><span id="quizCounter" role="status">문제 준비 중</span><progress id="quizProgress" max="1" value="0" aria-label="시험 진행"></progress></div>
     <article class="quiz-card" id="quizCard" hidden>
       <div class="quiz-card-head"><h2 id="quizQuestionHeading" tabindex="-1">문제</h2><label class="quiz-check"><input id="checkQuizQuestion" type="checkbox" disabled><span>복습 체크</span></label></div>
@@ -161,6 +168,14 @@
     <button id="revealQuizAnswer" type="button" aria-controls="quizAnswerBox" aria-expanded="false" disabled>정답 확인</button>
     <button id="nextQuizQuestion" type="button" disabled>다음 문제 →</button>
   </aside>
+
+  <dialog class="quiz-clear-dialog" id="clearChecksDialog" aria-labelledby="clearChecksTitle" aria-describedby="clearChecksDescription">
+    <p class="quiz-clear-eyebrow">복습 체크 관리</p>
+    <h2 id="clearChecksTitle">체크를 해제할까요?</h2>
+    <p id="clearChecksDescription"></p>
+    <p class="quiz-clear-note">문제·학습 진도·게임 기록은 그대로 유지됩니다. 해제한 뒤에는 ‘되돌리기’로 복원할 수 있어요.</p>
+    <div class="quiz-clear-actions"><button id="cancelClearChecks" type="button" autofocus>취소</button><button id="confirmClearChecks" class="quiz-clear-confirm" type="button">체크 해제</button></div>
+  </dialog>
 
   <main class="shell game-screen" id="game" hidden>
     <header class="reader-top"><a class="reader-back" href="#full-notes">← 정리본으로</a><span class="game-label">QUIZ ARCADE</span></header>
@@ -229,6 +244,6 @@
   </div>
   <div class="toast" id="toast" role="status">진도가 저장됐어요</div>
 
-  <script type="module" src="app.mjs"></script>
+  <script type="module" src="app.mjs?v=20261001-routine2"></script>
 </body>
 </html>

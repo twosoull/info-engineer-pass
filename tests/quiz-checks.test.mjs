@@ -87,3 +87,142 @@ test('missing storage still supports checks for the current session', () => {
   assert.deepEqual(checks.set('q-1-2', true), { checked: true, persisted: false });
   assert.equal(checks.has('q-1-2'), true);
 });
+
+test('chapter-scoped clear deduplicates IDs, saves once and preserves other chapters and storage keys', () => {
+  const base = memoryStorage({
+    [QUIZ_CHECKS_KEY]: '["q-1-1","q-1-2","q-10-1","q-2-3"]',
+    'info-engineer-daily-2026-10-25-v1': '{"2026-10-01-1":true}',
+    'info-engineer-game-records-v1': '{"bestScore":12000}'
+  });
+  const writes = [];
+  const storage = { getItem: base.getItem, setItem(key, value) { writes.push({ key, value }); base.setItem(key, value); } };
+  const checks = createQuizChecks(storage);
+  const ids = Object.freeze(['q-1-2', 'q-1-1', 'q-1-2', 'q-1-99', 'bad', null, 12]);
+  assert.deepEqual(checks.clear(ids), { removed: ['q-1-2', 'q-1-1'], persisted: true });
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].key, QUIZ_CHECKS_KEY);
+  assert.deepEqual(JSON.parse(base.getItem(QUIZ_CHECKS_KEY)), ['q-10-1', 'q-2-3']);
+  const reloaded = createQuizChecks(base);
+  assert.equal(reloaded.has('q-1-1'), false);
+  assert.equal(reloaded.has('q-1-2'), false);
+  assert.equal(reloaded.has('q-10-1'), true);
+  assert.equal(reloaded.has('q-2-3'), true);
+  assert.equal(base.getItem('info-engineer-daily-2026-10-25-v1'), '{"2026-10-01-1":true}');
+  assert.equal(base.getItem('info-engineer-game-records-v1'), '{"bestScore":12000}');
+});
+
+test('clear can remove all explicitly supplied checked IDs and restore undoes only that operation', () => {
+  const base = memoryStorage({ [QUIZ_CHECKS_KEY]: '["q-1-1","q-2-2","q-11-3"]' });
+  let writes = 0;
+  const storage = { getItem: base.getItem, setItem(key, value) { writes++; base.setItem(key, value); } };
+  const checks = createQuizChecks(storage);
+  const removed = checks.clear(['q-1-1', 'q-2-2', 'q-11-3']).removed;
+  assert.equal(writes, 1);
+  assert.deepEqual(JSON.parse(base.getItem(QUIZ_CHECKS_KEY)), []);
+  checks.set('q-4-4', true);
+  const beforeRestore = writes;
+  assert.deepEqual(checks.restore([...removed, removed[0], 'invalid']), { restored: removed, persisted: true });
+  assert.equal(writes, beforeRestore + 1);
+  assert.deepEqual(JSON.parse(base.getItem(QUIZ_CHECKS_KEY)), ['q-4-4', ...removed]);
+  for (const id of [...removed, 'q-4-4']) assert.equal(createQuizChecks(base).has(id), true);
+});
+
+test('empty, invalid and already-matching bulk operations are no-ops without writes', () => {
+  let writes = 0;
+  const checks = createQuizChecks({
+    getItem: () => '["q-1-1"]',
+    setItem() { writes++; }
+  });
+  for (const ids of [[], ['bad', null, 'q-1-a'], null, undefined, {}, 'q-1-1']) {
+    assert.deepEqual(checks.clear(ids), { removed: [], persisted: true });
+    assert.deepEqual(checks.restore(ids), { restored: [], persisted: true });
+  }
+  assert.deepEqual(checks.clear(['q-2-2']), { removed: [], persisted: true });
+  assert.deepEqual(checks.restore(['q-1-1', 'q-1-1']), { restored: [], persisted: true });
+  assert.equal(checks.has('q-1-1'), true);
+  assert.equal(writes, 0);
+});
+
+test('failed bulk writes keep the cleared and restored state in memory', () => {
+  let writes = 0;
+  const checks = createQuizChecks({
+    getItem: () => '["q-1-1","q-2-2"]',
+    setItem() { writes++; throw new Error('blocked'); }
+  });
+  assert.deepEqual(checks.clear(['q-1-1']), { removed: ['q-1-1'], persisted: false });
+  assert.equal(checks.has('q-1-1'), false);
+  assert.equal(checks.has('q-2-2'), true);
+  assert.deepEqual(checks.clear(['q-1-1']), { removed: [], persisted: false });
+  assert.equal(writes, 1);
+  assert.deepEqual(checks.restore(['q-1-1']), { restored: ['q-1-1'], persisted: false });
+  assert.equal(checks.has('q-1-1'), true);
+  assert.equal(writes, 2);
+});
+
+test('bulk operations continue safely when storage is entirely unavailable', () => {
+  const checks = createQuizChecks(undefined);
+  checks.set('q-1-1', true);
+  checks.set('q-2-2', true);
+  assert.deepEqual(checks.clear(['q-1-1']), { removed: ['q-1-1'], persisted: false });
+  assert.equal(checks.has('q-2-2'), true);
+  assert.deepEqual(checks.restore(['q-1-1']), { restored: ['q-1-1'], persisted: false });
+  assert.equal(checks.has('q-1-1'), true);
+});
+
+test('writes merge other tabs additions and removals instead of overwriting their chapters', () => {
+  const storage = memoryStorage({ [QUIZ_CHECKS_KEY]: '["q-1-1","q-2-2"]' });
+  const first = createQuizChecks(storage);
+  const second = createQuizChecks(storage);
+  second.set('q-3-3', true);
+  second.set('q-2-2', false);
+  assert.deepEqual(first.clear(['q-1-1']), { removed: ['q-1-1'], persisted: true });
+  assert.deepEqual(JSON.parse(storage.getItem(QUIZ_CHECKS_KEY)), ['q-3-3']);
+  second.set('q-4-4', true);
+  assert.deepEqual(first.restore(['q-1-1']), { restored: ['q-1-1'], persisted: true });
+  assert.deepEqual(JSON.parse(storage.getItem(QUIZ_CHECKS_KEY)), ['q-3-3', 'q-4-4', 'q-1-1']);
+  first.set('q-5-5', true);
+  second.set('q-6-6', true);
+  assert.deepEqual(JSON.parse(storage.getItem(QUIZ_CHECKS_KEY)), ['q-3-3', 'q-4-4', 'q-1-1', 'q-5-5', 'q-6-6']);
+});
+
+test('a failed local removal is merged with fresh other-tab additions on the next successful write', () => {
+  const base = memoryStorage({ [QUIZ_CHECKS_KEY]: '["q-1-1","q-2-2"]' });
+  let blocked = true;
+  const first = createQuizChecks({
+    getItem: base.getItem,
+    setItem(key, value) { if (blocked) throw new Error('quota exceeded'); base.setItem(key, value); }
+  });
+  assert.deepEqual(first.clear(['q-1-1']), { removed: ['q-1-1'], persisted: false });
+  const second = createQuizChecks(base);
+  second.set('q-3-3', true);
+  blocked = false;
+  assert.deepEqual(first.restore(['q-4-4']), { restored: ['q-4-4'], persisted: true });
+  assert.deepEqual(JSON.parse(base.getItem(QUIZ_CHECKS_KEY)), ['q-2-2', 'q-3-3', 'q-4-4']);
+  assert.equal(first.has('q-1-1'), false);
+});
+
+test('a failed local addition survives latest-state merging and an undo does not resurrect other cleared IDs', () => {
+  const base = memoryStorage({ [QUIZ_CHECKS_KEY]: '["q-1-1","q-2-2"]' });
+  let blocked = true;
+  const first = createQuizChecks({
+    getItem: base.getItem,
+    setItem(key, value) { if (blocked) throw new Error('quota exceeded'); base.setItem(key, value); }
+  });
+  first.set('q-3-3', true);
+  const second = createQuizChecks(base);
+  second.clear(['q-2-2']);
+  second.set('q-4-4', true);
+  blocked = false;
+  assert.deepEqual(first.clear(['q-1-1']), { removed: ['q-1-1'], persisted: true });
+  assert.deepEqual(JSON.parse(base.getItem(QUIZ_CHECKS_KEY)), ['q-4-4', 'q-3-3']);
+  first.restore(['q-1-1']);
+  assert.deepEqual(JSON.parse(base.getItem(QUIZ_CHECKS_KEY)), ['q-4-4', 'q-3-3', 'q-1-1']);
+});
+
+test('a damaged latest value does not discard the current session while applying a scoped operation', () => {
+  const storage = memoryStorage({ [QUIZ_CHECKS_KEY]: '["q-1-1","q-2-2"]' });
+  const checks = createQuizChecks(storage);
+  storage.setItem(QUIZ_CHECKS_KEY, '{broken');
+  assert.deepEqual(checks.clear(['q-1-1']), { removed: ['q-1-1'], persisted: true });
+  assert.deepEqual(JSON.parse(storage.getItem(QUIZ_CHECKS_KEY)), ['q-2-2']);
+});

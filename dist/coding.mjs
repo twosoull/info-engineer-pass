@@ -1,7 +1,7 @@
 import { codingLessons, codingStages, lessonHref } from './coding-curriculum.mjs';
 import { exercises } from './coding-exercises.mjs';
-import { codingLinks, days, koreaDate } from './schedule.mjs';
-import { getTaskCompletion, setTaskCompletion } from './planner.mjs';
+import { codingLinks, days, koreaDate } from './schedule.mjs?v=20261001-routine2';
+import { getTaskCompletion, setTaskCompletion } from './planner.mjs?v=20261001-routine2';
 
 const shortDate = date => `${Number(date.slice(5, 7))}/${Number(date.slice(8))}`;
 // These strings are locally authored, but escape both text and attributes consistently.

@@ -67,6 +67,18 @@ export function initQuiz() {
   const chapterSelect = document.getElementById('quizChapter');
   const scopeHelp = document.getElementById('quizScopeHelp');
   const scopeCheckedCount = document.getElementById('quizScopeCheckedCount');
+  const clearChapter = document.getElementById('clearChapterChecks');
+  const clearAll = document.getElementById('clearAllChecks');
+  const clearCount = document.getElementById('quizClearCount');
+  const clearHelp = document.getElementById('quizClearHelp');
+  const clearStatus = document.getElementById('quizClearStatus');
+  const undoClear = document.getElementById('undoClearChecks');
+  const clearDialog = document.getElementById('clearChecksDialog');
+  const clearTitle = document.getElementById('clearChecksTitle');
+  const clearDescription = document.getElementById('clearChecksDescription');
+  const cancelClear = document.getElementById('cancelClearChecks');
+  const confirmClear = document.getElementById('confirmClearChecks');
+  const clearSummary = document.getElementById('quizCheckToolsSummary');
   const checks = createQuizChecks({
     getItem: key => localStorage.getItem(key),
     setItem: (key, value) => localStorage.setItem(key, value)
@@ -78,6 +90,9 @@ export function initQuiz() {
   let readerChapterId = null;
   let loaded = false;
   let failed = false;
+  let pendingClear = null;
+  let lastClear = null;
+  let clearOpener = null;
 
   const selectedScope = () => parseQuizScope(location.hash) || { mode: 'all', chapterId: null };
   const onQuizPage = () => parseQuizScope(location.hash) !== null;
@@ -121,6 +136,16 @@ export function initQuiz() {
       : failed ? '정리본을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'
       : !knownChapter(scope.chapterId) ? '존재하지 않는 단원이에요. 다른 단원을 선택해주세요.'
       : `${poolFor(scope).length}문제 · ${scope.mode === 'checked' ? '선택한 단원의 체크한 문제만' : '선택한 단원만'} 무작위로 출제됩니다.`;
+    const totalChecked = checks.filter(bank).length;
+    const chapterChecked = scope.chapterId === null ? 0 : filterQuizChapter(checks.filter(bank), scope.chapterId).length;
+    clearChapter.disabled = !loaded || failed || scope.chapterId === null || !knownChapter(scope.chapterId) || !chapterChecked;
+    clearAll.disabled = !loaded || failed || !totalChecked;
+    clearChapter.textContent = scope.chapterId === null ? '이 단원 체크 해제' : `${scope.chapterId}단원 체크 해제 (${chapterChecked})`;
+    clearAll.textContent = `전체 체크 해제 (${totalChecked})`;
+    clearCount.textContent = scope.chapterId === null ? `전체 ${totalChecked}개` : `이 단원 ${chapterChecked}개 · 전체 ${totalChecked}개`;
+    clearHelp.textContent = scope.chapterId === null
+      ? '위에서 단원을 선택하면 해당 단원의 체크만 해제할 수 있어요. 날짜별 학습 진도는 유지됩니다.'
+      : '이 단원만 해제하거나, 모든 단원의 체크를 한 번에 해제할 수 있어요. 날짜별 학습 진도는 유지됩니다.';
   }
 
   function updateChecks() {
@@ -208,6 +233,77 @@ export function initQuiz() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
+  function forgetUndo() {
+    lastClear = null;
+    undoClear.hidden = true;
+    clearStatus.textContent = '';
+  }
+
+  function requestClear(chapterOnly, opener) {
+    if (!loaded || failed || (chapterOnly && (scope.chapterId === null || !knownChapter(scope.chapterId)))) return;
+    const chapterId = chapterOnly ? scope.chapterId : null;
+    const targets = filterQuizChapter(checks.filter(bank), chapterId);
+    if (!targets.length) return;
+    // Freeze explicit IDs at confirmation time; never use a changing dropdown
+    // as the deletion target after the confirmation opens.
+    pendingClear = { ids: targets.map(question => question.id), chapterId };
+    clearOpener = opener;
+    clearTitle.textContent = chapterOnly ? `${chapterId}단원 체크를 해제할까요?` : '전체 단원의 체크를 해제할까요?';
+    clearDescription.textContent = chapterOnly
+      ? `${chapterName(chapterId)}에 체크한 ${targets.length}개만 해제합니다. 다른 단원의 체크는 유지됩니다.`
+      : `현재 선택한 단원과 관계없이, 전체 단원에 체크한 ${targets.length}개를 모두 해제합니다.`;
+    confirmClear.textContent = `${targets.length}개 체크 해제`;
+    clearDialog.showModal();
+    cancelClear.focus();
+  }
+
+  function pruneCheckedSessions() {
+    for (const [key, session] of sessions) {
+      if (parseQuizScope(key)?.mode !== 'checked') continue;
+      const beforeCurrent = session.deck.slice(0, session.index);
+      session.deck = checks.filter(session.deck);
+      session.index = checks.filter(beforeCurrent).length;
+    }
+  }
+
+  clearChapter.addEventListener('click', () => requestClear(true, clearChapter));
+  clearAll.addEventListener('click', () => requestClear(false, clearAll));
+  cancelClear.addEventListener('click', () => clearDialog.close());
+  clearDialog.addEventListener('close', () => {
+    pendingClear = null;
+    const target = clearOpener && !clearOpener.disabled ? clearOpener : clearSummary;
+    if (onQuizPage()) target.focus({ preventScroll: true });
+    clearOpener = null;
+  });
+  window.addEventListener('hashchange', () => { if (clearDialog.open) clearDialog.close(); });
+  confirmClear.addEventListener('click', () => {
+    if (!pendingClear || !clearDialog.open || !onQuizPage()) return;
+    const target = pendingClear;
+    pendingClear = null;
+    const result = checks.clear(target.ids);
+    lastClear = result.removed.length ? { ids: result.removed, chapterId: target.chapterId } : null;
+    undoClear.hidden = !lastClear;
+    pruneCheckedSessions();
+    if (scope.mode === 'checked') displayQuestion();
+    else updateChecks();
+    checkStatus.textContent = '';
+    const label = target.chapterId === null ? '전체 단원' : `${target.chapterId}단원`;
+    clearStatus.textContent = result.removed.length
+      ? `${label}의 체크 ${result.removed.length}개를 해제했어요.${result.persisted ? ' 다음 체크 변경이나 새로고침 전까지 되돌릴 수 있어요.' : ' 이 화면에는 반영했지만 저장하지 못했어요. 새로고침하면 체크가 다시 나타날 수 있어요.'}`
+      : '해제할 체크가 없어요.';
+    clearDialog.close();
+  });
+  undoClear.addEventListener('click', () => {
+    if (!lastClear) return;
+    const result = checks.restore(lastClear.ids);
+    lastClear = null;
+    undoClear.hidden = true;
+    if (scope.mode === 'checked') { prepare(scope); displayQuestion(); }
+    else updateChecks();
+    clearStatus.textContent = `체크 ${result.restored.length}개를 되돌렸어요.${result.persisted ? '' : ' 이 화면에는 반영했지만 저장하지 못했어요. 새로고침하면 유지되지 않을 수 있어요.'}`;
+    clearSummary.focus({ preventScroll: true });
+  });
+
   startChapter.addEventListener('change', () => {
     readerChapterId = startChapter.value === 'all' ? null : Number(startChapter.value);
     updateScopeControls();
@@ -242,12 +338,13 @@ export function initQuiz() {
     const session = sessionFor();
     const question = session.deck[session.index];
     if (!question) return;
+    forgetUndo();
     const result = checks.set(question.id, check.checked);
-    if (scope.mode === 'checked' && !result.checked) {
-      // Keep the same index: the next remaining question shifts into this slot.
-      session.deck.splice(session.index, 1);
-      displayQuestion(true);
-    } else updateChecks();
+    // Writes merge other tabs' latest changes. Remove every unchecked entry,
+    // not only this one, so a bulk-cleared question cannot linger in the deck.
+    pruneCheckedSessions();
+    if (scope.mode === 'checked') displayQuestion(true);
+    else updateChecks();
     checkStatus.textContent = result.persisted
       ? result.checked ? '체크했어요. 체크 따로보기에서 다시 볼 수 있어요.' : '체크를 해제했어요.'
       : '이 화면에는 반영했지만 체크 기록을 저장하지 못했어요. 새로고침하면 유지되지 않을 수 있어요.';

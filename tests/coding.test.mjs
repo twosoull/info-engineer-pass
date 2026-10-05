@@ -20,13 +20,15 @@ test('26 consecutive daily lessons align with the existing four-week plan', () =
 
 test('every study day retains 20 minutes coding and stable checklist IDs', () => {
   assert.equal(days.length, 27);
-  assert.equal(totalMinutes, 1770);
-  assert.equal(days.flatMap(day => day.tasks).filter(task => task.type !== 'exam').length, 63);
-  for (const day of days.slice(0, -1)) {
+  assert.equal(totalMinutes, 1320);
+  assert.equal(days.flatMap(day => day.tasks).filter(task => task.type !== 'exam').length, 77);
+  // The original numeric IDs do not follow the revised task positions.
+  const originalCodingSuffixes = [3, 2, 2, 3, 3, 2, 3, 2, 2, 2, 2, 3, 2, 3, 2, 2, 2, 2, 3, 2, 2, 3, 2, 3, 3, 3];
+  for (const [index, day] of days.slice(0, -1).entries()) {
     const coding = day.tasks.filter(task => task.type === 'code');
     assert.equal(coding.length, 1);
     assert.equal(coding[0].minutes, 20);
-    assert.equal(coding[0].id, `${day.date}-${day.tasks.length}`);
+    assert.equal(coding[0].id, day.date + '-' + originalCodingSuffixes[index]);
     assert.equal(coding[0].href, lessonHref(day.date));
     assert.equal(coding[0].internal, true);
   }
@@ -46,10 +48,11 @@ test('all seven authored exercises are reachable and have complete explanations'
   }
 });
 
-test('Java fundamentals are skipped while C/Python receive introductory days; SQL stays separate', () => {
+test('Java fundamentals are skipped while SQL remains in the short theory routine', () => {
   assert.ok(codingLessons.filter(item => item.stage === 0).every(item => !item.language.includes('Java')));
-  for (const date of ['2026-10-02', '2026-10-05']) {
-    const tasks = days.find(day => day.date === date).tasks;
-    assert.ok(tasks.some(task => task.title.startsWith('SQL') && task.minutes === 15 && task.type !== 'code'));
-  }
+  assert.ok(codingLessons.every(item => !item.language.includes('SQL')));
+  const sqlDays = days.filter(day => day.focus?.chapter === 7);
+  assert.deepEqual(sqlDays.map(day => day.date), ['2026-10-08', '2026-10-09']);
+  assert.deepEqual(sqlDays[1].focus.terms, ['DDL', 'DML', 'DCL']);
+  assert.ok(sqlDays.every(day => day.tasks.filter(task => task.type !== 'code').reduce((sum, task) => sum + task.minutes, 0) === 30));
 });

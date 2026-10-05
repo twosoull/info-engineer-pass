@@ -11,10 +11,10 @@ export const codingLinks = {
   '약한 언어': 'https://complainrevolutionist.tistory.com/210'
 };
 export const weeks = [
-  { title: '기출 감 잡기 + 핵심 개념', goal: '2024년 기출 2회분 · 정리본 1~5·7단원 · C·Python 입문', note: '기출은 진단용으로 풀어요. 코딩은 Java와 비교하며 C·Python 기초를 하루 20분씩 배웁니다.' },
-  { title: '정리본 1회독 마무리', goal: '2024년 기출 3회차 · 정리본 6·8~11단원 · 매일 코딩 20분', note: '설명을 읽고 답을 가린 채 말해보세요. 바로 답하지 못한 개념을 표시합니다.' },
-  { title: '암기 2회독 + 약점 보완', goal: '필수 개념 재암기 · 모의고사 1회 · 매일 코딩 20분', note: '반복해서 틀리는 이유를 한 줄로 적고 다시 풉니다. 일요일은 밀린 암기를 보충합니다.' },
-  { title: '2025년 기출 + 최종 점검', goal: '2025년 기출 3회분 · 매일 코딩 20분 · 10/25 시험', note: '풀이 시간은 학습 예산입니다. 못 푼 문항은 표시하고, 시험 전날에는 표시한 오답을 다시 봅니다.' }
+  { title: '하루 한 묶음, 천천히 시작', goal: '10/1부터 용어 4~5개씩 · 아침 10분 + 저녁 20분 + 코딩 20분', note: '9/29~30의 목표와 기록은 유지합니다. 10/1부터 오늘 정한 용어만 읽고, 저녁에 같은 용어를 가리고 말해보세요.' },
+  { title: 'DB·SQL·테스트를 작게', goal: '키·정규형·SQL·테스트를 하루 3~5개씩 · 매일 총 50분', note: '출근길에는 읽고 표시하기, 퇴근 후에는 같은 설명에서 정답 떠올리기. 주말도 아침·저녁 같은 분량으로 진행합니다.' },
+  { title: '보안·연계도 한 묶음씩', goal: '테스트·보안·모듈·연계 용어를 하루 3~4개씩 · 코딩 20분 유지', note: '오늘 묶음만 학습하면 완료입니다. 막히는 용어는 표시하고, 정해둔 20분 안에서 최대 2개만 다시 확인하세요.' },
+  { title: '익숙한 용어로 시험 마무리', goal: '10/20 네트워크 3개 · 10/21~24는 배운 용어 복습 · 10/25 시험', note: '마지막 4일은 새 용어 없이 복습합니다. 시간이 남을 때만 저녁 20분 안에서 2025년 기출 최대 3문제를 확인하고, 전날에는 준비물을 챙기세요.' }
 ];
 const block = (title, detail, minutes, type = 'theory') => ({ title, detail, minutes, type });
 const notes = { href: '#full-notes', label: '정리본 읽기' };
@@ -27,7 +27,8 @@ const entry = (date, title, tasks, resource = notes) => {
     minutes: 20, type: 'code', href: lessonHref(date), internal: true, linkLabel: '오늘 단계 학습하기'
   }] };
 };
-export const days = [
+// Keep legacy task IDs so changing the workload does not reset coding progress.
+const legacyDays = [
   entry('2026-09-29', '기출로 출발점 확인', [
     block('2024년 1회 기출 진단', '30분 동안 풀 수 있는 만큼 시도하고, 모르는 문제는 표시합니다.', 30, 'practice'),
     block('채점하고 약점 3개 적기', '틀린 답을 확인하고 이론·언어별로 부족한 점 3개를 적습니다.', 10, 'review')
@@ -125,6 +126,72 @@ export const days = [
   ...day, week: Math.floor(index / 7),
   tasks: day.tasks.map((item, taskIndex) => ({ ...item, id: `${day.date}-${taskIndex + 1}` }))
 }));
+
+const focus = (title, chapter, terms, blocks) => ({
+  title, chapter, terms, questionIds: blocks.map(block => 'q-' + chapter + '-' + block), review: false
+});
+const newFocuses = [
+  focus('SOLID 다섯 원칙', 1, ['SRP', 'OCP', 'LSP', 'ISP', 'DIP'], [11, 13, 15, 17, 19]),
+  focus('객체를 만드는 패턴', 1, ['Builder', 'Factory Method', 'Abstract Factory', 'Singleton'], [27, 29, 30, 32]),
+  focus('구조를 연결하는 패턴', 1, ['Decorator', 'Facade', 'Proxy', 'Adapter'], [35, 36, 38, 40]),
+  focus('UML 다이어그램 네 가지', 2, ['클래스 다이어그램', '유스케이스 다이어그램', '시퀀스 다이어그램', '상태 다이어그램'], [16, 23, 24, 26]),
+  focus('테이블의 행과 열', 3, ['튜플', '속성', '카디널리티', '차수'], [10, 11, 12, 13]),
+  focus('키의 역할 다섯 가지', 3, ['기본 키', '대체 키', '후보 키', '슈퍼 키', '외래 키'], [33, 34, 35, 36, 37]),
+  focus('1정규형부터 BCNF까지', 3, ['1정규형', '2정규형', '3정규형', 'BCNF'], [24, 25, 26, 27]),
+  focus('트랜잭션의 ACID', 7, ['원자성', '일관성', '격리성', '영속성'], [4, 5, 6, 7]),
+  focus('SQL 명령의 세 분류', 7, ['DDL', 'DML', 'DCL'], [25, 48, 66]),
+  focus('화이트박스와 커버리지', 10, ['화이트박스 테스트', '구문 커버리지', '결정 커버리지', '조건 커버리지'], [1, 2, 4, 6]),
+  focus('블랙박스 테스트 기법', 10, ['블랙박스 테스트', '동등분할 테스트', '경곗값 분석 테스트', '결정 테이블 테스트'], [18, 20, 22, 24]),
+  focus('테스트를 돕는 네 가지', 10, ['테스트 하네스', '테스트 드라이버', '테스트 스텁', '목 오브젝트'], [87, 89, 90, 95]),
+  focus('테스트의 네 단계', 10, ['단위 테스트', '통합 테스트', '시스템 테스트', '인수 테스트'], [68, 69, 70, 71]),
+  focus('보안의 세 요소', 9, ['기밀성', '무결성', '가용성'], [2, 3, 4]),
+  focus('서비스 거부 공격 구분', 9, ['DoS', 'DDoS', 'DRDoS'], [10, 18, 21]),
+  focus('웹 공격 세 가지', 9, ['XSS', 'CSRF', 'SQL 삽입'], [79, 80, 81]),
+  focus('응집도와 결합도', 8, ['응집도', '기능적 응집도', '결합도', '자료 결합도'], [8, 15, 16, 22]),
+  focus('시스템을 연결하는 방법', 4, ['EAI', '포인트 투 포인트', '허브 앤 스포크', 'ESB'], [1, 4, 5, 8]),
+  focus('웹 인터페이스 용어', 5, ['JSON', 'XML', 'AJAX', 'REST'], [2, 3, 4, 5]),
+  focus('네트워크 프로토콜 세 가지', 11, ['IP', 'ARP', 'ICMP'], [57, 58, 60])
+];
+const focusPlan = [
+  ...newFocuses,
+  ...[0, 6, 11, 15].map(index => ({
+    ...newFocuses[index], title: '다시 떠올리기 · ' + newFocuses[index].title, review: true
+  }))
+];
+const isWeekend = date => [0, 6].includes(new Date(date + 'T12:00:00Z').getUTCDay());
+
+export const days = legacyDays.map((day, index) => {
+  const weekend = isWeekend(day.date);
+  if (day.date < '2026-10-01' || day.date === EXAM_DATE) return { ...day, weekend };
+  const selected = focusPlan[index - 2];
+  const terms = [...selected.terms];
+  const morningLabel = weekend ? '아침' : '출근길';
+  const eveningLabel = weekend ? '저녁' : '퇴근 후';
+  const noteHref = '#full-notes/chapter/' + selected.chapter;
+  const extra = !selected.review ? ''
+    : day.date === '2026-10-24' ? ' 일찍 끝나면 같은 20분 안에서 수험표·신분증·필기구를 확인하세요.'
+    : ' 일찍 끝나면 같은 20분 안에서 2025년 기출 최대 3문제만 확인하세요.';
+  const coding = day.tasks.find(task => task.type === 'code');
+  return {
+    ...day, title: selected.title, weekend,
+    focus: { chapter: selected.chapter, terms, questionIds: [...selected.questionIds], review: selected.review },
+    tasks: [
+      {
+        id: day.date + '-routine-morning', session: 'morning', minutes: 10, type: 'theory',
+        title: morningLabel + ' 10분 · ' + (selected.review ? '배운' : '오늘') + ' 용어 ' + terms.length + '개 읽기',
+        detail: terms.join(' · ') + '만 한 번 읽고 뜻을 확인하세요. 모르는 용어에 표시하면 완료예요.' + (selected.review ? ' 새 용어는 추가하지 않아요.' : ''),
+        href: noteHref, internal: true, linkLabel: selected.chapter + '단원에서 오늘 용어 찾기'
+      },
+      {
+        id: day.date + '-routine-evening', session: 'evening', minutes: 20, type: 'review',
+        title: eveningLabel + ' 20분 · 같은 용어 가리고 말하기',
+        detail: '어제 용어 2개 3분 → 오늘 용어 ' + terms.length + '개 제목 가리고 12분 → 틀린 것 최대 2개 5분 이내. 한 번씩 답해보고 틀린 것에 표시하면 완료예요.' + extra,
+        href: noteHref, internal: true, linkLabel: '정리본 열고 제목 가리기'
+      },
+      { ...coding, session: 'evening' }
+    ]
+  };
+});
 
 export const dayMinutes = day => day.tasks.reduce((sum, item) => sum + item.minutes, 0);
 export const weekMinutes = index => days.filter(day => day.week === index).reduce((sum, day) => sum + dayMinutes(day), 0);
