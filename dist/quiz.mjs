@@ -1,6 +1,6 @@
 import { definitionColon } from './notes.mjs';
 import { createQuizChecks } from './quiz-checks.mjs';
-import { parseQuizScope, quizScopeHash, filterQuizChapter, buildQuizChapters } from './quiz-scope.mjs';
+import { parseQuizScope, quizScopeHash, filterQuizChapters, buildQuizChapters, normalizeQuizChapterIds } from './quiz-scope.mjs?v=20261009-multi';
 
 const stripMarker = text => text.replace(/^(?:\d+\)|\([\da-z]+\)|[-•〮◌]+)\s*/i, '').trim();
 
@@ -65,6 +65,11 @@ export function initQuiz() {
   const modeLinks = [...document.querySelectorAll('.quiz-mode-links a')];
   const startChapter = document.getElementById('quizStartChapter');
   const chapterSelect = document.getElementById('quizChapter');
+  const readerCheckedLink = document.getElementById('viewCheckedQuiz');
+  const readerCheckedCount = document.getElementById('readerCheckedCount');
+  const applyChapters = document.getElementById('applyQuizChapters');
+  const draftHelp = document.getElementById('quizChapterDraftHelp');
+  const chapterPicker = document.getElementById('quizChapterPicker');
   const scopeHelp = document.getElementById('quizScopeHelp');
   const scopeCheckedCount = document.getElementById('quizScopeCheckedCount');
   const clearChapter = document.getElementById('clearChapterChecks');
@@ -86,19 +91,25 @@ export function initQuiz() {
   let bank = [];
   let chapters = [];
   const sessions = new Map();
-  let scope = { mode: 'all', chapterId: null };
-  let readerChapterId = null;
+  let scope = { mode: 'all', chapterIds: null };
+  let readerChapterIds = null;
+  let draftChapterIds = null;
   let loaded = false;
   let failed = false;
   let pendingClear = null;
   let lastClear = null;
   let clearOpener = null;
 
-  const selectedScope = () => parseQuizScope(location.hash) || { mode: 'all', chapterId: null };
+  const selectedScope = () => parseQuizScope(location.hash) || { mode: 'all', chapterIds: null };
   const onQuizPage = () => parseQuizScope(location.hash) !== null;
-  const knownChapter = id => id === null || chapters.some(chapter => chapter.id === id);
-  const chapterName = id => chapters.find(chapter => chapter.id === id)?.title || '전체 단원';
-  const poolFor = current => filterQuizChapter(current.mode === 'checked' ? checks.filter(bank) : bank, current.chapterId);
+  const knownChapters = ids => ids === null || (Array.isArray(ids) && ids.length > 0 && ids.every(id => chapters.some(chapter => chapter.id === id)));
+  const chapterName = ids => ids === null ? '전체 단원' : !ids.length ? '선택한 단원 없음'
+    : ids.length === 1 ? chapters.find(chapter => chapter.id === ids[0])?.title || `${ids[0]}단원`
+    : `${ids.join('·')}단원`;
+  const shortScopeName = ids => ids === null ? '전체 단원' : `${ids.join('·')}단원`;
+  const poolFor = current => knownChapters(current.chapterIds)
+    ? filterQuizChapters(current.mode === 'checked' ? checks.filter(bank) : bank, current.chapterIds) : [];
+  const sameSelection = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
   function sessionFor(current = scope) {
     const key = quizScopeHash(current);
@@ -106,46 +117,93 @@ export function initQuiz() {
     return sessions.get(key);
   }
 
-  function fillChapterSelect(select, selected, checkedOnly = false) {
-    const available = checkedOnly ? checks.filter(bank) : bank;
-    const options = [{ id: null, title: '전체 단원', count: available.length }, ...chapters.map(chapter => ({
-      ...chapter, count: checkedOnly ? filterQuizChapter(available, chapter.id).length : chapter.count
-    }))];
-    if (selected !== null && !knownChapter(selected)) options.push({ id: selected, title: `알 수 없는 단원 (${selected})`, count: 0 });
-    select.replaceChildren(...options.map(item => {
-      const option = document.createElement('option');
-      option.value = item.id === null ? 'all' : String(item.id);
-      option.textContent = `${item.title} · ${item.count}문제`;
-      return option;
-    }));
-    select.value = selected === null ? 'all' : String(selected);
-    select.disabled = !loaded || failed;
+  function createChapterPicker(root, summaryId, allId, noneId, getSelection, setSelection) {
+    const summary = document.getElementById(summaryId);
+    const all = document.getElementById(allId);
+    const none = document.getElementById(noneId);
+    const options = new Map();
+    function change(id, checked) {
+      const selection = getSelection();
+      const ids = new Set(selection === null ? chapters.map(chapter => chapter.id) : selection);
+      if (checked) ids.add(id); else ids.delete(id);
+      const nextIds = normalizeQuizChapterIds([...ids]);
+      setSelection(nextIds.length === chapters.length && knownChapters(nextIds) ? null : nextIds);
+      updateScopeControls();
+    }
+    all.addEventListener('click', () => { setSelection(null); updateScopeControls(); });
+    none.addEventListener('click', () => { setSelection([]); updateScopeControls(); });
+    return {
+      update(selected, checkedOnly = false) {
+        if (options.size !== chapters.length) {
+          options.clear();
+          root.replaceChildren(...chapters.map(chapter => {
+            const label = document.createElement('label');
+            label.className = 'quiz-chapter-option';
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.id = `${root.id}-${chapter.id}`;
+            input.value = String(chapter.id);
+            const title = document.createElement('span');
+            title.textContent = chapter.title.replace(/\u00ad/g, '').trim();
+            const count = document.createElement('small');
+            input.addEventListener('change', () => change(chapter.id, input.checked));
+            label.append(input, title, count);
+            options.set(chapter.id, { input, count });
+            return label;
+          }));
+        }
+        const available = checkedOnly ? checks.filter(bank) : bank;
+        for (const chapter of chapters) {
+          const option = options.get(chapter.id);
+          option.input.checked = selected === null || selected.includes(chapter.id);
+          option.input.disabled = !loaded || failed;
+          option.count.textContent = `${filterQuizChapters(available, [chapter.id]).length}문제`;
+        }
+        root.disabled = all.disabled = none.disabled = !loaded || failed;
+        summary.textContent = !loaded ? '단원 준비 중…' : selected === null ? `전체 ${chapters.length}개 단원 선택됨`
+          : !selected.length ? '단원을 선택해주세요' : `${selected.join('·')}단원 · ${selected.length}개 선택됨`;
+      }
+    };
   }
+  const readerPicker = createChapterPicker(startChapter, 'quizStartChapterSummary', 'quizStartAll', 'quizStartNone',
+    () => readerChapterIds, ids => { readerChapterIds = ids; });
+  const examPicker = createChapterPicker(chapterSelect, 'quizChapterSummary', 'quizAllChapters', 'quizNoChapters',
+    () => draftChapterIds, ids => { draftChapterIds = ids; });
 
   function updateScopeControls() {
-    fillChapterSelect(startChapter, readerChapterId);
-    fillChapterSelect(chapterSelect, scope.chapterId, scope.mode === 'checked');
-    const readerCount = filterQuizChapter(bank, readerChapterId).length;
-    start.disabled = !loaded || failed || !readerCount;
+    readerPicker.update(readerChapterIds);
+    examPicker.update(draftChapterIds, scope.mode === 'checked');
+    const readerCount = filterQuizChapters(bank, readerChapterIds).length;
+    start.disabled = !loaded || failed || !knownChapters(readerChapterIds) || !readerCount;
     help.textContent = failed ? '정리본을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'
       : !loaded ? '정리본에서 문제를 준비하는 중입니다…'
-      : readerCount ? `${chapterName(readerChapterId)} · ${readerCount}문제 · 중복 없이 무작위 출제`
-      : '이 단원에는 출제할 설명이 없어요. 다른 단원을 선택해주세요.';
-    scopeCheckedCount.textContent = String(filterQuizChapter(checks.filter(bank), scope.chapterId).length);
+      : !knownChapters(readerChapterIds) ? '시험 볼 단원을 하나 이상 선택해주세요. 여러 개를 함께 고를 수 있어요.'
+      : readerCount ? `${chapterName(readerChapterIds)} · ${readerCount}문제 · 선택한 단원끼리 섞어서 출제`
+      : '선택한 단원에는 출제할 설명이 없어요. 다른 단원을 선택해주세요.';
+    readerCheckedLink.href = knownChapters(readerChapterIds) ? quizScopeHash({ mode: 'checked', chapterIds: readerChapterIds }) : '#full-notes';
+    readerCheckedLink.setAttribute('aria-disabled', String(!loaded || failed || !knownChapters(readerChapterIds)));
+    readerCheckedCount.textContent = String(filterQuizChapters(checks.filter(bank), readerChapterIds).length);
+    const changed = !sameSelection(draftChapterIds, scope.chapterIds);
+    const draftCount = filterQuizChapters(scope.mode === 'checked' ? checks.filter(bank) : bank, draftChapterIds).length;
+    applyChapters.disabled = !loaded || failed || !knownChapters(draftChapterIds);
+    draftHelp.textContent = !loaded ? '단원을 준비하는 중입니다…' : failed ? '정리본을 불러오지 못했어요.'
+      : !knownChapters(draftChapterIds) ? '하나 이상 선택해주세요. 아무것도 선택하지 않으면 시험을 시작할 수 없어요.'
+      : `${draftCount}문제${changed ? ' · 아직 적용 전이에요.' : ''} · 아래 버튼을 누르면 이 범위로 새 시험을 시작합니다.`;
+    scopeCheckedCount.textContent = String(filterQuizChapters(checks.filter(bank), scope.chapterIds).length);
     scopeHelp.textContent = !loaded ? '정리본에서 문제를 준비하는 중입니다…'
       : failed ? '정리본을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'
-      : !knownChapter(scope.chapterId) ? '존재하지 않는 단원이에요. 다른 단원을 선택해주세요.'
-      : `${poolFor(scope).length}문제 · ${scope.mode === 'checked' ? '선택한 단원의 체크한 문제만' : '선택한 단원만'} 무작위로 출제됩니다.`;
+      : !knownChapters(scope.chapterIds) ? '존재하지 않는 단원이 포함되어 있어요. 단원을 다시 선택해주세요.'
+      : `현재 시험: ${shortScopeName(scope.chapterIds)} · ${poolFor(scope).length}문제 · ${scope.mode === 'checked' ? '체크한 문제만' : '선택한 단원끼리 섞어서'} 출제됩니다.`;
     const totalChecked = checks.filter(bank).length;
-    const chapterChecked = scope.chapterId === null ? 0 : filterQuizChapter(checks.filter(bank), scope.chapterId).length;
-    clearChapter.disabled = !loaded || failed || scope.chapterId === null || !knownChapter(scope.chapterId) || !chapterChecked;
+    const chapterChecked = scope.chapterIds === null ? 0 : filterQuizChapters(checks.filter(bank), scope.chapterIds).length;
+    clearChapter.disabled = !loaded || failed || changed || scope.chapterIds === null || !knownChapters(scope.chapterIds) || !chapterChecked;
     clearAll.disabled = !loaded || failed || !totalChecked;
-    clearChapter.textContent = scope.chapterId === null ? '이 단원 체크 해제' : `${scope.chapterId}단원 체크 해제 (${chapterChecked})`;
+    clearChapter.textContent = scope.chapterIds === null ? '선택 단원 체크 해제' : `${shortScopeName(scope.chapterIds)} 체크 해제 (${chapterChecked})`;
     clearAll.textContent = `전체 체크 해제 (${totalChecked})`;
-    clearCount.textContent = scope.chapterId === null ? `전체 ${totalChecked}개` : `이 단원 ${chapterChecked}개 · 전체 ${totalChecked}개`;
-    clearHelp.textContent = scope.chapterId === null
-      ? '위에서 단원을 선택하면 해당 단원의 체크만 해제할 수 있어요. 날짜별 학습 진도는 유지됩니다.'
-      : '이 단원만 해제하거나, 모든 단원의 체크를 한 번에 해제할 수 있어요. 날짜별 학습 진도는 유지됩니다.';
+    clearCount.textContent = scope.chapterIds === null ? `전체 ${totalChecked}개` : `시험 범위 ${chapterChecked}개 · 전체 ${totalChecked}개`;
+    clearHelp.textContent = changed ? '변경한 단원을 먼저 적용하면 그 단원들의 체크만 해제할 수 있어요.' : scope.chapterIds === null
+      ? '출제 단원을 선택·적용하면 그 단원들의 체크만 해제할 수 있어요. 날짜별 학습 진도는 유지됩니다.'
+      : '현재 시험 범위의 체크만 해제하거나, 전체 체크를 한 번에 해제할 수 있어요. 날짜별 학습 진도는 유지됩니다.';
   }
 
   function updateChecks() {
@@ -160,13 +218,13 @@ export function initQuiz() {
   }
 
   function updateMode() {
-    modeLabel.textContent = scope.mode === 'checked' ? '체크한 문제 복습' : scope.chapterId === null ? '랜덤 시험' : '단원별 시험';
+    modeLabel.textContent = scope.mode === 'checked' ? '체크한 문제 복습' : scope.chapterIds === null ? '랜덤 시험' : '선택 단원 시험';
     intro.textContent = scope.mode === 'checked'
       ? '체크한 문제만 한 문제씩 봅니다. 정답은 가려지고, 체크를 해제하면 이 모음에서 빠집니다.'
       : '정답을 생각한 뒤 확인하세요. 다시 보고 싶은 문제는 체크해두세요.';
     modeLinks.forEach((link, index) => {
       const mode = index === 0 ? 'all' : 'checked';
-      link.href = quizScopeHash({ mode, chapterId: scope.chapterId });
+      link.href = quizScopeHash({ mode, chapterIds: scope.chapterIds });
       const active = mode === scope.mode;
       if (active) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
@@ -186,10 +244,10 @@ export function initQuiz() {
     next.disabled = !question;
     card.hidden = !question;
     message.hidden = !!question;
-    restart.hidden = !!question || !loaded || failed || !knownChapter(scope.chapterId) || !filterQuizChapter(bank, scope.chapterId).length;
+    restart.hidden = !!question || !loaded || failed || !knownChapters(scope.chapterIds) || !filterQuizChapters(bank, scope.chapterIds).length;
     restart.textContent = scope.mode === 'checked'
-      ? poolFor(scope).length ? '체크한 문제 다시 섞어보기' : scope.chapterId === null ? '전체 시험 시작하기' : '이 단원 시험 시작하기'
-      : scope.chapterId === null ? '다시 섞어서 시험보기' : '이 단원 다시 섞어서 시험보기';
+      ? poolFor(scope).length ? '체크한 문제 다시 섞어보기' : scope.chapterIds === null ? '전체 시험 시작하기' : '선택 단원 시험 시작하기'
+      : scope.chapterIds === null ? '다시 섞어서 시험보기' : '선택 단원 다시 섞어서 시험보기';
     progress.max = Math.max(deck.length, 1);
     progress.value = question ? index + 1 : deck.length;
     counter.textContent = deck.length ? `${Math.min(index + 1, deck.length)} / ${deck.length}문제` : loaded ? '0문제' : '문제 준비 중';
@@ -198,12 +256,12 @@ export function initQuiz() {
       prompt.replaceChildren();
       message.textContent = failed ? '정리본을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'
         : !loaded ? '정리본에서 문제를 불러오는 중입니다…'
-        : !knownChapter(scope.chapterId) ? '이 단원을 찾을 수 없어요. 위에서 다른 단원을 선택해주세요.'
-        : scope.mode === 'checked' && !poolFor(scope).length ? scope.chapterId === null
+        : !knownChapters(scope.chapterIds) ? '선택 범위에 없는 단원이 포함되어 있어요. 위에서 단원을 다시 선택해주세요.'
+        : scope.mode === 'checked' && !poolFor(scope).length ? scope.chapterIds === null
           ? '체크한 문제가 아직 없어요. 시험에서 다시 보고 싶은 문제를 체크하면 이곳에 모입니다.'
-          : '이 단원에는 체크한 문제가 아직 없어요. 다른 단원을 선택하거나 이 단원 시험에서 문제를 체크해보세요.'
-        : deck.length ? `${chapterName(scope.chapterId)}의 ${deck.length}문제를 마지막까지 살펴봤어요. 다시 시작하면 순서가 새로 섞입니다.`
-        : '이 단원에는 출제할 설명이 없어요. 다른 단원을 선택해주세요.';
+          : '선택한 단원에는 체크한 문제가 아직 없어요. 다른 단원을 선택하거나 선택 단원 시험에서 문제를 체크해보세요.'
+        : deck.length ? `${chapterName(scope.chapterIds)}의 ${deck.length}문제를 마지막까지 살펴봤어요. 다시 시작하면 순서가 새로 섞입니다.`
+        : '선택한 단원에는 출제할 설명이 없어요. 다른 단원을 선택해주세요.';
       next.textContent = '다음 문제';
       if (focus) (restart.hidden ? message : restart).focus({ preventScroll: true });
       return;
@@ -219,13 +277,15 @@ export function initQuiz() {
   }
 
   function prepare(nextScope) {
-    scope = { ...nextScope };
+    scope = { mode: nextScope.mode, chapterIds: normalizeQuizChapterIds(nextScope.chapterIds) };
     sessions.set(quizScopeHash(scope), { deck: shuffleQuestions(poolFor(scope)), index: 0, started: true });
   }
 
   function begin(nextScope = scope) {
-    if (!loaded || failed || !knownChapter(nextScope.chapterId) || !poolFor(nextScope).length) return;
+    if (!loaded || failed || !knownChapters(nextScope.chapterIds)) return;
     prepare(nextScope);
+    draftChapterIds = scope.chapterIds === null ? null : [...scope.chapterIds];
+    readerChapterIds = scope.chapterIds === null ? null : [...scope.chapterIds];
     updateMode();
     checkStatus.textContent = '';
     displayQuestion(true);
@@ -240,17 +300,18 @@ export function initQuiz() {
   }
 
   function requestClear(chapterOnly, opener) {
-    if (!loaded || failed || (chapterOnly && (scope.chapterId === null || !knownChapter(scope.chapterId)))) return;
-    const chapterId = chapterOnly ? scope.chapterId : null;
-    const targets = filterQuizChapter(checks.filter(bank), chapterId);
+    if (!loaded || failed || (chapterOnly && (scope.chapterIds === null || !knownChapters(scope.chapterIds)
+      || !sameSelection(draftChapterIds, scope.chapterIds)))) return;
+    const chapterIds = chapterOnly ? [...scope.chapterIds] : null;
+    const targets = filterQuizChapters(checks.filter(bank), chapterIds);
     if (!targets.length) return;
-    // Freeze explicit IDs at confirmation time; never use a changing dropdown
+    // Freeze explicit IDs at confirmation time; never use a changing selection
     // as the deletion target after the confirmation opens.
-    pendingClear = { ids: targets.map(question => question.id), chapterId };
+    pendingClear = { ids: targets.map(question => question.id), chapterIds };
     clearOpener = opener;
-    clearTitle.textContent = chapterOnly ? `${chapterId}단원 체크를 해제할까요?` : '전체 단원의 체크를 해제할까요?';
+    clearTitle.textContent = chapterOnly ? `${shortScopeName(chapterIds)} 체크를 해제할까요?` : '전체 단원의 체크를 해제할까요?';
     clearDescription.textContent = chapterOnly
-      ? `${chapterName(chapterId)}에 체크한 ${targets.length}개만 해제합니다. 다른 단원의 체크는 유지됩니다.`
+      ? `${chapterName(chapterIds)}에 체크한 ${targets.length}개만 해제합니다. 다른 단원의 체크는 유지됩니다.`
       : `현재 선택한 단원과 관계없이, 전체 단원에 체크한 ${targets.length}개를 모두 해제합니다.`;
     confirmClear.textContent = `${targets.length}개 체크 해제`;
     clearDialog.showModal();
@@ -281,13 +342,13 @@ export function initQuiz() {
     const target = pendingClear;
     pendingClear = null;
     const result = checks.clear(target.ids);
-    lastClear = result.removed.length ? { ids: result.removed, chapterId: target.chapterId } : null;
+    lastClear = result.removed.length ? { ids: result.removed, chapterIds: target.chapterIds } : null;
     undoClear.hidden = !lastClear;
     pruneCheckedSessions();
     if (scope.mode === 'checked') displayQuestion();
     else updateChecks();
     checkStatus.textContent = '';
-    const label = target.chapterId === null ? '전체 단원' : `${target.chapterId}단원`;
+    const label = shortScopeName(target.chapterIds);
     clearStatus.textContent = result.removed.length
       ? `${label}의 체크 ${result.removed.length}개를 해제했어요.${result.persisted ? ' 다음 체크 변경이나 새로고침 전까지 되돌릴 수 있어요.' : ' 이 화면에는 반영했지만 저장하지 못했어요. 새로고침하면 체크가 다시 나타날 수 있어요.'}`
       : '해제할 체크가 없어요.';
@@ -304,15 +365,15 @@ export function initQuiz() {
     clearSummary.focus({ preventScroll: true });
   });
 
-  startChapter.addEventListener('change', () => {
-    readerChapterId = startChapter.value === 'all' ? null : Number(startChapter.value);
-    updateScopeControls();
+  readerCheckedLink.addEventListener('click', event => {
+    if (!loaded || failed || !knownChapters(readerChapterIds)) event.preventDefault();
   });
-  chapterSelect.addEventListener('change', () => {
-    const chapterId = chapterSelect.value === 'all' ? null : Number(chapterSelect.value);
-    location.hash = quizScopeHash({ mode: scope.mode, chapterId });
+  applyChapters.addEventListener('click', () => {
+    if (!loaded || failed || !knownChapters(draftChapterIds)) return;
+    chapterPicker.open = false;
+    begin({ mode: scope.mode, chapterIds: draftChapterIds });
   });
-  start.addEventListener('click', () => begin({ mode: 'all', chapterId: readerChapterId }));
+  start.addEventListener('click', () => begin({ mode: 'all', chapterIds: readerChapterIds }));
   restart.addEventListener('click', () => begin(scope.mode === 'checked' && !poolFor(scope).length ? { ...scope, mode: 'all' } : scope));
   reveal.addEventListener('click', () => {
     const { deck, index } = sessionFor();
@@ -361,7 +422,8 @@ export function initQuiz() {
       updateChecks();
       if (onQuizPage()) {
         prepare(selectedScope());
-        if (knownChapter(scope.chapterId)) readerChapterId = scope.chapterId;
+        draftChapterIds = scope.chapterIds;
+        if (knownChapters(scope.chapterIds)) readerChapterIds = scope.chapterIds;
         updateMode();
         displayQuestion();
       }
@@ -377,10 +439,11 @@ export function initQuiz() {
     },
     enter() {
       const nextScope = selectedScope();
-      // Keep independent progress per chapter; checked lists refresh on entry.
+      // Keep independent progress per selected combination; checked lists refresh on entry.
       if (loaded && !failed && (nextScope.mode === 'checked' || !sessionFor(nextScope).started)) prepare(nextScope);
       else scope = nextScope;
-      if (knownChapter(scope.chapterId)) readerChapterId = scope.chapterId;
+      draftChapterIds = scope.chapterIds;
+      if (knownChapters(scope.chapterIds)) readerChapterIds = scope.chapterIds;
       updateMode();
       checkStatus.textContent = '';
       displayQuestion(true);

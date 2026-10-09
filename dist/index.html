@@ -45,7 +45,7 @@
     @media (min-width:640px){.shell{padding-left:24px;padding-right:24px}.hero{padding:34px}.pdf-grid{grid-template-columns:1fr 1fr}.roadmap{grid-template-columns:1fr 1fr}}
     @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
   </style>
-  <link rel="stylesheet" href="study.css?v=20261001-routine2">
+  <link rel="stylesheet" href="study.css?v=20261009-multi">
   <link rel="stylesheet" href="game.css">
 </head>
 <body>
@@ -125,9 +125,13 @@
     <h1 class="reader-heading">정리본 읽고, 떠올리기</h1>
     <p class="reader-intro">설명을 읽고 정답을 말해보세요. 아래 버튼으로 소제목과 핵심 용어를 가릴 수 있어요.</p>
     <div class="quiz-start">
-      <div class="quiz-scope-picker"><label for="quizStartChapter">시험 볼 단원</label><select id="quizStartChapter" disabled><option value="all">전체 단원</option></select></div>
+      <details class="quiz-chapter-picker" id="quizStartPicker">
+        <summary><span>시험 볼 단원 <small>여러 개 선택</small></span><strong id="quizStartChapterSummary">단원 준비 중…</strong></summary>
+        <div class="quiz-chapter-actions"><button id="quizStartAll" type="button" disabled>전체 선택</button><button id="quizStartNone" type="button" disabled>전체 선택 해제</button></div>
+        <fieldset class="quiz-chapter-options" id="quizStartChapter" aria-label="시험 볼 단원 여러 개 선택" disabled></fieldset>
+      </details>
       <button id="startQuiz" type="button" disabled>시험보기 <span aria-hidden="true">→</span></button><p id="quizStartHelp">정리본에서 문제를 준비하는 중입니다…</p>
-      <a class="quiz-checked-link" id="viewCheckedQuiz" href="#quiz/checked"><span>✓ 체크 따로보기</span><span class="quiz-checked-count">0</span></a><p>체크한 문제는 이 기기·브라우저에 저장됩니다.</p>
+      <a class="quiz-checked-link" id="viewCheckedQuiz" href="#quiz/checked"><span>✓ 선택 범위 체크 따로보기</span><span class="quiz-checked-count" id="readerCheckedCount">0</span></a><p>선택한 단원들의 체크한 문제만 봅니다. 체크 기록은 이 기기·브라우저에 저장됩니다.</p>
     </div>
     <a class="game-entry" href="#game"><span class="game-entry-icon" aria-hidden="true">✦</span><span><small>읽기만 하기 지루할 때</small><strong>게임하기 <span aria-hidden="true">→</span></strong><small>4지선다 · 타임어택 · 연속 정답 콤보</small></span></a>
     <div class="notes-panel">
@@ -146,11 +150,20 @@
     <header class="reader-top"><a class="reader-back" href="#full-notes">← 정리본으로</a><span class="reader-meta" id="quizMode">랜덤 시험</span></header>
     <div class="quiz-heading"><h1>설명 보고 떠올리기</h1><p id="quizIntro">정답을 생각한 뒤 확인하세요. 다시 보고 싶은 문제는 체크해두세요.</p></div>
     <nav class="quiz-mode-links" aria-label="시험 문제 모음"><a href="#quiz" aria-current="page">전체 문제</a><a href="#quiz/checked">✓ 체크 따로보기 <span class="quiz-checked-count" id="quizScopeCheckedCount">0</span></a></nav>
-    <div class="quiz-scope-picker quiz-scope-panel"><label for="quizChapter">출제 단원</label><select id="quizChapter" disabled><option value="all">전체 단원</option></select><p id="quizScopeHelp">원하는 단원을 선택하면 해당 단원만 출제됩니다.</p></div>
+    <div class="quiz-scope-panel">
+      <details class="quiz-chapter-picker" id="quizChapterPicker">
+        <summary><span>출제 단원 바꾸기 <small>여러 개 선택</small></span><strong id="quizChapterSummary">단원 준비 중…</strong></summary>
+        <div class="quiz-chapter-actions"><button id="quizAllChapters" type="button" disabled>전체 선택</button><button id="quizNoChapters" type="button" disabled>전체 선택 해제</button></div>
+        <fieldset class="quiz-chapter-options" id="quizChapter" aria-label="출제 단원 여러 개 선택" disabled></fieldset>
+        <p id="quizChapterDraftHelp" role="status">단원을 고른 뒤 적용해주세요.</p>
+        <button class="quiz-apply-chapters" id="applyQuizChapters" type="button" disabled>선택 적용 · 새 시험 시작</button>
+      </details>
+      <p id="quizScopeHelp">선택한 단원들의 문제를 섞어서 출제합니다.</p>
+    </div>
     <details class="quiz-check-tools" id="quizCheckTools">
       <summary id="quizCheckToolsSummary">체크 해제 <span id="quizClearCount">전체 0개</span></summary>
-      <p id="quizClearHelp">단원을 선택하면 해당 단원의 체크만 해제할 수 있어요. 문제와 날짜별 학습 진도는 유지됩니다.</p>
-      <div class="quiz-clear-actions"><button id="clearChapterChecks" type="button" disabled>이 단원 체크 해제</button><button id="clearAllChecks" type="button" disabled>전체 체크 해제</button></div>
+      <p id="quizClearHelp">출제 단원을 선택·적용하면 그 단원들의 체크만 해제할 수 있어요. 문제와 날짜별 학습 진도는 유지됩니다.</p>
+      <div class="quiz-clear-actions"><button id="clearChapterChecks" type="button" disabled>선택 단원 체크 해제</button><button id="clearAllChecks" type="button" disabled>전체 체크 해제</button></div>
     </details>
     <div class="quiz-clear-result"><p id="quizClearStatus" role="status"></p><button id="undoClearChecks" type="button" hidden>방금 해제한 체크 되돌리기</button></div>
     <div class="quiz-progress"><span id="quizCounter" role="status">문제 준비 중</span><progress id="quizProgress" max="1" value="0" aria-label="시험 진행"></progress></div>
@@ -244,6 +257,6 @@
   </div>
   <div class="toast" id="toast" role="status">진도가 저장됐어요</div>
 
-  <script type="module" src="app.mjs?v=20261001-routine2"></script>
+  <script type="module" src="app.mjs?v=20261009-multi"></script>
 </body>
 </html>

@@ -1,19 +1,35 @@
 const validChapterId = value => Number.isSafeInteger(value) && value > 0;
 
+export function normalizeQuizChapterIds(ids) {
+  if (ids === null) return null;
+  if (!Array.isArray(ids)) return undefined;
+  const normalized = [];
+  for (const id of ids) {
+    if (!validChapterId(id)) return undefined;
+    normalized.push(id);
+  }
+  return [...new Set(normalized)].sort((a, b) => a - b);
+}
+
 export function parseQuizScope(hash) {
   if (typeof hash !== 'string') return null;
-  const match = /^#quiz(?:\/(checked))?(?:\/chapter\/([1-9]\d*))?$/.exec(hash);
+  const match = /^#quiz(?:\/(checked))?(?:\/(chapter|chapters)\/([1-9]\d*(?:,[1-9]\d*)*))?$/.exec(hash);
   if (!match || match[0] !== hash) return null;
-  const chapterId = match[2] === undefined ? null : Number(match[2]);
-  if (chapterId !== null && !validChapterId(chapterId)) return null;
-  return { mode: match[1] ? 'checked' : 'all', chapterId };
+  if (match[2] === 'chapter' && match[3].includes(',')) return null;
+  const chapterIds = normalizeQuizChapterIds(match[3] === undefined ? null : match[3].split(',').map(Number));
+  if (chapterIds === undefined) return null;
+  return { mode: match[1] ? 'checked' : 'all', chapterIds };
 }
 
 export function quizScopeHash(scope) {
-  if (!scope || !['all', 'checked'].includes(scope.mode)
-    || (scope.chapterId !== null && !validChapterId(scope.chapterId))) return null;
+  if (!scope || !['all', 'checked'].includes(scope.mode)) return null;
+  const chapterIds = normalizeQuizChapterIds(scope.chapterIds);
+  if (chapterIds === undefined || chapterIds?.length === 0) return null;
   const base = scope.mode === 'checked' ? '#quiz/checked' : '#quiz';
-  return scope.chapterId === null ? base : `${base}/chapter/${scope.chapterId}`;
+  if (chapterIds === null) return base;
+  return chapterIds.length === 1
+    ? `${base}/chapter/${chapterIds[0]}`
+    : `${base}/chapters/${chapterIds.join(',')}`;
 }
 
 export function questionChapterId(question) {
@@ -25,9 +41,20 @@ export function questionChapterId(question) {
 }
 
 export function filterQuizChapter(bank, chapterId) {
-  if (chapterId === null) return [...bank];
-  if (!validChapterId(chapterId)) return [];
-  return bank.filter(question => questionChapterId(question) === chapterId);
+  return filterQuizChapters(bank, chapterId === null ? null : [chapterId]);
+}
+
+export function filterQuizChapters(bank, ids) {
+  const chapterIds = normalizeQuizChapterIds(ids);
+  if (chapterIds === null) return [...bank];
+  if (chapterIds === undefined || chapterIds.length === 0) return [];
+  const selected = new Set(chapterIds);
+  const seen = new Set();
+  return bank.filter(question => {
+    if (!selected.has(questionChapterId(question)) || seen.has(question.id)) return false;
+    seen.add(question.id);
+    return true;
+  });
 }
 
 export function buildQuizChapters(chapters, bank) {

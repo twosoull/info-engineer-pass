@@ -1,7 +1,7 @@
 import { showPlanDay, showTodayPlan } from './planner.mjs?v=20261001-routine2';
 import { initNotes, parseNotesChapter } from './notes.mjs?v=20261001-routine2';
-import { initQuiz } from './quiz.mjs';
-import { parseQuizScope } from './quiz-scope.mjs';
+import { initQuiz } from './quiz.mjs?v=20261009-multi';
+import { parseQuizScope } from './quiz-scope.mjs?v=20261009-multi';
 import { initCoding } from './coding.mjs?v=20261001-routine2';
 import { initGame } from './game.mjs';
 
